@@ -13,6 +13,7 @@ private const val NOTES_DIR = "notes"
 private const val EMPTY_NOTE_NAME = "empty_note"
 private const val TXT_EXTENSION = ".txt"
 private const val FRAME_TITLE = "Notes"
+private const val BOTTOM_PADDING = "   "
 
 class MainWindow : JFrame() { // BorderLayout by default
     private val saveButton = JButton("Save")
@@ -28,6 +29,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     private lateinit var savedNotesScrollPane: JScrollPane
     private val autosaveCheckbox = JCheckBox("Autosave", false)
     private val saveShortcut: KeyStroke? = KeyStroke.getKeyStroke("ctrl S")
+    private val statusLabel = JLabel("${BOTTOM_PADDING}Ready")
 
     init {
         configureFrame()
@@ -43,7 +45,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.layout = BorderLayout()
         this.contentPane.background = Color(255, 255, 255)
-        this.add(autosaveCheckbox, BorderLayout.SOUTH)
+        this.add(statusLabel, BorderLayout.SOUTH)
         setIcons()
     }
 
@@ -134,6 +136,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         newNoteItem.addActionListener {
             if (autosaveCheckbox.isSelected) saveNote()
             textArea.text = ""
+            statusLabel.text = "${BOTTOM_PADDING}New note created successfully"
         } // TODO: Suggest to save the current note before creating a new one?
 
         // save note menu item
@@ -156,6 +159,10 @@ class MainWindow : JFrame() { // BorderLayout by default
         menu.add(newNoteItem)
         menu.add(saveNoteItem)
         menu.add(exitItem)
+
+        val menuAutosave = JMenu("Autosave")
+        menuAutosave.add(autosaveCheckbox)
+        menuBar.add(menuAutosave)
 
         this.jMenuBar = menuBar
     }
@@ -195,6 +202,7 @@ class MainWindow : JFrame() { // BorderLayout by default
 
         Files.createDirectories(Path(NOTES_DIR))
         File("$NOTES_DIR/$fileName").writeText(note)
+        statusLabel.text = "${BOTTOM_PADDING}Note $fileName saved successfully"
 
         readNotes(File(NOTES_DIR))
         updateSavedNotesList()
@@ -223,6 +231,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     private fun addLoadButtonListener() = loadButton.addActionListener {
         readNotes(File(NOTES_DIR))
         updateSavedNotesList()
+        statusLabel.text = "${BOTTOM_PADDING}Notes list updated successfully"
     }
 
     private fun addNotesSelectionListener() = savedNotesList.addListSelectionListener {
