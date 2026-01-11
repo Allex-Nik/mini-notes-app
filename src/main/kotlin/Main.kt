@@ -3,6 +3,7 @@ package org.education
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
+import java.awt.Font
 import java.awt.Taskbar
 import java.io.File
 import java.nio.file.Files
@@ -15,28 +16,32 @@ private const val EMPTY_NOTE_NAME = "empty_note"
 private const val TXT_EXTENSION = ".txt"
 private const val FRAME_TITLE = "Notes"
 
-class MainWindow(title: String) : JFrame() { // BorderLayout by default
+class MainWindow : JFrame() { // BorderLayout by default
     private val saveButton = JButton("Save")
     private val loadButton = JButton("Load")
-    private val buttonPanel = JPanel() // FlowLayout by default
+    private val leftPanel = JPanel() // FlowLayout by default
     private val textArea = JTextArea()
     private val savedNotes = mutableListOf<String>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
     private var savedNotesList = JList(savedNotes.toTypedArray())
-    private val savedNotesLabel = JLabel("     Saved Notes     ")
+    // check available fonts: val end = GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames
+    private val savedNotesLabel = JLabel("        Saved Notes     ").apply {
+        font = Font("Arial", Font.PLAIN, 18)
+    }
+    private lateinit var savedNotesScrollPane: JScrollPane
 
     init {
-        createFrame(title)
-        this.add(createToolPanel(), BorderLayout.WEST)
-        this.add(textArea, BorderLayout.CENTER)
+        configureFrame()
+        configureLeftPanel()
+        configureTextArea()
         addListeners()
     }
 
-    private fun createFrame(title: String) {
-        this.title = title
+    private fun configureFrame() {
+        this.title = FRAME_TITLE
         this.setSize(1280, 820)
         this.defaultCloseOperation = EXIT_ON_CLOSE
-        this.layout = BorderLayout(10, 10)
+        this.layout = BorderLayout()
         this.contentPane.background = Color(255, 255, 255)
         setIcons()
     }
@@ -51,25 +56,67 @@ class MainWindow(title: String) : JFrame() { // BorderLayout by default
         }
     }
 
-    private fun createToolPanel(): JPanel {
-        buttonPanel.background = Color(255, 229, 204)
-        buttonPanel.preferredSize = Dimension(120, 100)
+    private fun configureLeftPanel() {
+        leftPanel.layout = BorderLayout()
+        leftPanel.preferredSize = Dimension(200, 800)
 
-        // add buttons
-        saveButton.preferredSize = Dimension(90, 50)
-        loadButton.preferredSize = Dimension(90, 50)
-        buttonPanel.add(saveButton)
-        buttonPanel.add(loadButton)
+        createButtonsPanel()
+        configureSavedNotesPanel()
 
-        // add saved notes
+        this.add(leftPanel, BorderLayout.WEST)
+    }
+
+    private fun createButtonsPanel() {
+        val buttonsPanel = JPanel().apply {
+            layout = BorderLayout()
+            border = BorderFactory.createEmptyBorder(40, 10, 20, 10)
+            background = Color(244, 231, 207)
+        }
+
+        saveButton.apply {
+            preferredSize = Dimension(90, 50)
+            toolTipText = """Saves the current note to the folder "$NOTES_DIR" on your computer"""
+            font = Font("Arial", Font.PLAIN, 18)
+        }
+
+        loadButton.apply {
+            preferredSize = Dimension(90, 50)
+            toolTipText = "Refreshes the list of saved notes"
+            font = Font("Arial", Font.PLAIN, 18)
+        }
+
+        buttonsPanel.add(saveButton, BorderLayout.NORTH)
+        // make buttons further from each other to avoid misclicks
+        buttonsPanel.add(Box.createRigidArea(Dimension(0, 10)), BorderLayout.CENTER)
+        buttonsPanel.add(loadButton, BorderLayout.SOUTH)
+
+        leftPanel.add(buttonsPanel, BorderLayout.NORTH)
+    }
+
+    private fun configureSavedNotesPanel() {
+        savedNotesPanel.apply {
+            layout = BorderLayout()
+            background = Color(244, 231, 207)
+        }
+
+        savedNotesList.apply {
+            background = Color(244, 231, 207)
+            selectionBackground = Color.WHITE
+            selectionForeground = Color.BLACK
+            toolTipText = "Click on a note to view it"
+            font = Font("Arial", Font.PLAIN, 14)
+        }
+
         readNotes(File(NOTES_DIR))
         updateSavedNotesList()
-        savedNotesPanel.add(savedNotesList)
-        savedNotesPanel.preferredSize = Dimension(150, 500)
-        savedNotesPanel.background = Color(255, 229, 204)
-        buttonPanel.add(savedNotesPanel)
 
-        return buttonPanel
+        leftPanel.add(savedNotesPanel, BorderLayout.CENTER)
+    }
+
+    private fun configureTextArea() {
+        textArea.background = Color(255, 247, 232)
+        val textScrollPane = JScrollPane(textArea)
+        this.add(textScrollPane, BorderLayout.CENTER)
     }
 
     private fun addListeners() {
@@ -117,7 +164,7 @@ class MainWindow(title: String) : JFrame() { // BorderLayout by default
 
     private fun addNotesSelectionListener() = savedNotesList.addListSelectionListener {
         // setListData in updateSavedNotesList removes selection and triggers this listener
-        // which leads to savedNotesList.selectedValue == null
+        // which leads to savedNotesList.selectedValue == null and thus an exception
         if (savedNotesList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = savedNotesList.selectedValue
         textArea.text = File("$NOTES_DIR/$selectedNote").readText()
@@ -135,10 +182,13 @@ class MainWindow(title: String) : JFrame() { // BorderLayout by default
     }
 
     private fun updateSavedNotesList() {
-        savedNotesPanel.removeAll() // removes nested components
-        savedNotesPanel.add(savedNotesLabel)
+        savedNotesPanel.removeAll()
+        savedNotesPanel.add(savedNotesLabel, BorderLayout.NORTH)
         savedNotesList.setListData(savedNotes.toTypedArray())
-        savedNotesPanel.add(savedNotesList)
+        savedNotesPanel.add(Box.createRigidArea(Dimension(0, 20)), BorderLayout.CENTER)
+        savedNotesPanel.add(savedNotesList, BorderLayout.CENTER)
+        savedNotesScrollPane = JScrollPane(savedNotesList)
+        savedNotesPanel.add(savedNotesScrollPane)
         savedNotesPanel.revalidate()
         savedNotesPanel.repaint()
     }
@@ -146,7 +196,7 @@ class MainWindow(title: String) : JFrame() { // BorderLayout by default
 
 fun main() {
     SwingUtilities.invokeLater {
-        val frame = MainWindow(FRAME_TITLE)
+        val frame = MainWindow()
         frame.isVisible = true
     }
 }
