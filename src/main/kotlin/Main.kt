@@ -1,15 +1,13 @@
 package org.education
 
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.Font
-import java.awt.Taskbar
+import java.awt.*
+import java.awt.event.KeyEvent
 import java.io.File
 import java.nio.file.Files
 import javax.swing.*
 import kotlin.io.path.Path
 import kotlin.io.path.exists
+import kotlin.system.exitProcess
 
 private const val NOTES_DIR = "notes"
 private const val EMPTY_NOTE_NAME = "empty_note"
@@ -24,16 +22,18 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val savedNotes = mutableListOf<String>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
     private var savedNotesList = JList(savedNotes.toTypedArray())
-    // check available fonts: val end = GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames
     private val savedNotesLabel = JLabel("        Saved Notes     ").apply {
         font = Font("Arial", Font.PLAIN, 18)
-    }
+    } // check available fonts: val end = GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames
     private lateinit var savedNotesScrollPane: JScrollPane
+    private val autosaveCheckbox = JCheckBox("Autosave", false)
+    private val saveShortcut: KeyStroke? = KeyStroke.getKeyStroke("ctrl S")
 
     init {
         configureFrame()
         configureLeftPanel()
         configureTextArea()
+        configureMenuBar()
         addListeners()
     }
 
@@ -43,6 +43,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         this.defaultCloseOperation = EXIT_ON_CLOSE
         this.layout = BorderLayout()
         this.contentPane.background = Color(255, 255, 255)
+        this.add(autosaveCheckbox, BorderLayout.SOUTH)
         setIcons()
     }
 
@@ -119,13 +120,55 @@ class MainWindow : JFrame() { // BorderLayout by default
         this.add(textScrollPane, BorderLayout.CENTER)
     }
 
+    private fun configureMenuBar() {
+        val menuBar = JMenuBar()
+        val menu = JMenu("Menu")
+        menu.mnemonic = KeyEvent.VK_M
+        menu.accessibleContext.accessibleDescription = "Main menu"
+        menuBar.add(menu)
+
+        // new note menu item
+        val newNotePic = ImageIcon(this.javaClass.getResource("/new-note1.jpeg"))
+            .image.getScaledInstance(20, 20, Image.SCALE_SMOOTH)
+        val newNoteItem = JMenuItem("New", ImageIcon(newNotePic)) // TODO: Add a shortcut
+        newNoteItem.addActionListener {
+            if (autosaveCheckbox.isSelected) saveNote()
+            textArea.text = ""
+        } // TODO: Suggest to save the current note before creating a new one?
+
+        // save note menu item
+        val saveNotePic = ImageIcon(this.javaClass.getResource("/save2.jpeg"))
+            .image.getScaledInstance(20, 20, Image.SCALE_SMOOTH)
+        val saveNoteItem = JMenuItem("Save", ImageIcon(saveNotePic))
+        saveNoteItem.accelerator = saveShortcut
+        saveNoteItem.addActionListener { if (confirmedSaveNote()) saveNote() }
+
+        // exit menu item
+        val exitPic = ImageIcon(this.javaClass.getResource("/exit.jpeg"))
+            .image.getScaledInstance(20, 20, Image.SCALE_SMOOTH)
+        val exitItem = JMenuItem("Exit", ImageIcon(exitPic)) // TODO: Add a shortcut
+        exitItem.addActionListener {
+            if (!confirmedExit()) return@addActionListener
+            if (autosaveCheckbox.isSelected) saveNote()
+            exitProcess(0)
+        }
+
+        menu.add(newNoteItem)
+        menu.add(saveNoteItem)
+        menu.add(exitItem)
+
+        this.jMenuBar = menuBar
+    }
+
     private fun addListeners() {
         addSaveButtonListener()
         addLoadButtonListener()
         addNotesSelectionListener()
     }
 
-    private fun addSaveButtonListener() = saveButton.addActionListener {
+    private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
+
+    private fun saveNote() {
         val note = textArea.text
 
         // take the first word of the note, remove punctuation
@@ -155,6 +198,26 @@ class MainWindow : JFrame() { // BorderLayout by default
 
         readNotes(File(NOTES_DIR))
         updateSavedNotesList()
+    }
+
+    private fun confirmedSaveNote(): Boolean {
+        val choice = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to save this note?",
+            "Save Note",
+            JOptionPane.YES_NO_OPTION
+        )
+        return choice == JOptionPane.YES_OPTION
+    }
+
+    private fun confirmedExit(): Boolean {
+        val choice = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to exit?",
+            "Exit",
+            JOptionPane.YES_NO_OPTION
+        )
+        return choice == JOptionPane.YES_OPTION || (choice == JOptionPane.CLOSED_OPTION)
     }
 
     private fun addLoadButtonListener() = loadButton.addActionListener {
