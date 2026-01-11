@@ -23,7 +23,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val savedNotes = mutableListOf<String>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
     private var savedNotesList = JList(savedNotes.toTypedArray())
-    private val savedNotesLabel = JLabel("        Saved Notes     ").apply {
+    private val savedNotesLabel = JLabel("Saved Notes", SwingConstants.CENTER).apply {
         font = Font("Arial", Font.PLAIN, 18)
     } // check available fonts: val end = GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames
     private lateinit var savedNotesScrollPane: JScrollPane
