@@ -130,7 +130,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         menuBar.add(menu)
 
         // new note menu item
-        val newNotePic = ImageIcon(this.javaClass.getResource("/new-note1.jpeg"))
+        val newNotePic = ImageIcon(this.javaClass.getResource("/new-note.jpeg"))
             .image.getScaledInstance(20, 20, Image.SCALE_SMOOTH)
         val newNoteItem = JMenuItem("New", ImageIcon(newNotePic)) // TODO: Add a shortcut
         newNoteItem.addActionListener {
@@ -140,7 +140,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         } // TODO: Suggest to save the current note before creating a new one?
 
         // save note menu item
-        val saveNotePic = ImageIcon(this.javaClass.getResource("/save2.jpeg"))
+        val saveNotePic = ImageIcon(this.javaClass.getResource("/save-note.jpeg"))
             .image.getScaledInstance(20, 20, Image.SCALE_SMOOTH)
         val saveNoteItem = JMenuItem("Save", ImageIcon(saveNotePic))
         saveNoteItem.accelerator = saveShortcut
