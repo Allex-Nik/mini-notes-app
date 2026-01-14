@@ -125,10 +125,12 @@ class MainWindow : JFrame() { // BorderLayout by default
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
         val newNoteItem = JMenuItem(UIText.NEW_NOTE_TITLE, ImageIcon(newNotePic)) // TODO: Add a shortcut
         newNoteItem.addActionListener {
-            if (autosaveCheckbox.isSelected) saveNote()
+            // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
+            if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
             textArea.text = ""
+            savedNotesList.clearSelection()
             statusLabel.text = UIText.NOTE_CREATED_MESSAGE
-        } // TODO: Suggest to save the current note before creating a new one?
+        }
 
         // save note menu item
         val saveNotePic = ImageIcon(this.javaClass.getResource(Icons.SAVE_NOTE_ICON))
@@ -286,7 +288,7 @@ private object UIText {
     const val SAVE_TITLE = "Save"
     const val NEW_NOTE_TITLE = "New"
 
-    const val CONFIRM_SAVE_MESSAGE = "Are you sure you want to save this note?"
+    const val CONFIRM_SAVE_MESSAGE = "Do you want to save this note?"
     const val CONFIRM_EXIT_MESSAGE = "Are you sure you want to exit?"
     const val NOTES_UPDATED_MESSAGE = "Notes list updated successfully"
     const val NOTE_CREATED_MESSAGE = "New note created successfully"
