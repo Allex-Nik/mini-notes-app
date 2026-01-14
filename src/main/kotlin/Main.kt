@@ -168,6 +168,7 @@ class MainWindow : JFrame() { // BorderLayout by default
 
     private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
 
+    // TODO: Implement editing existing notes without creating new ones
     private fun saveNote() {
         val note = textArea.text
 
@@ -227,7 +228,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
     }
 
-    // TODO: When select another note, autosave if the checkbox is checked, ask about saving otherwise
+    // TODO: When add some text and then select another note, autosave if the checkbox is checked, ask about saving otherwise
     private fun addNotesSelectionListener() = savedNotesList.addListSelectionListener {
         // setListData in updateSavedNotesList removes selection and triggers this listener
         // which leads to savedNotesList.selectedValue == null and thus an exception
