@@ -48,7 +48,10 @@ class MainWindow : JFrame() { // BorderLayout by default
         this.iconImage = appImage.image
 
         if (Taskbar.isTaskbarSupported()) {
-            Taskbar.getTaskbar().iconImage = appImage.image
+            val taskbar = Taskbar.getTaskbar()
+            if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+                iconImage = appImage.image
+            }
         }
     }
 
