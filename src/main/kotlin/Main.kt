@@ -22,6 +22,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     private lateinit var savedNotesScrollPane: JScrollPane
     private val autosaveCheckbox = JCheckBox(UIText.AUTOSAVE_CHECKBOX_TITLE, false)
     private val saveShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.SAVE_SHORTCUT)
+    private val newNoteShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.NEW_NOTE_SHORTCUT)
     private val statusLabel = JLabel(UIText.READY_LABEL)
         .apply { border = Theme.statusPadding }
 
@@ -114,6 +115,9 @@ class MainWindow : JFrame() { // BorderLayout by default
 
     private fun configureTextArea() {
         textArea.background = Theme.textAreaColor
+        // ctrl N - in JTextArea is going to the next line
+        // cancel the default behavior for JTextArea when it is in focus
+        textArea.getInputMap(JComponent.WHEN_FOCUSED).put(newNoteShortcut, "none")
         val textScrollPane = JScrollPane(textArea)
         this.add(textScrollPane, BorderLayout.CENTER)
     }
@@ -124,15 +128,17 @@ class MainWindow : JFrame() { // BorderLayout by default
         menuBar.add(menu)
 
         // new note menu item
-        val newNotePic = ImageIcon(this.javaClass.getResource(Icons.NEW_NOTE_ICON))
-            .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
-        val newNoteItem = JMenuItem(UIText.NEW_NOTE_TITLE, ImageIcon(newNotePic)) // TODO: Add a shortcut
-        newNoteItem.addActionListener {
-            // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
-            if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
-            textArea.text = ""
-            savedNotesList.clearSelection()
-            statusLabel.text = UIText.NOTE_CREATED_MESSAGE
+        val newNoteItem = JMenuItem(UIText.NEW_NOTE_TITLE).apply {
+            accelerator = newNoteShortcut
+            iconImage = ImageIcon(this@MainWindow.javaClass.getResource(Icons.NEW_NOTE_ICON))
+                .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
+            addActionListener {
+                // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
+                if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
+                textArea.text = ""
+                savedNotesList.clearSelection()
+                statusLabel.text = UIText.NOTE_CREATED_MESSAGE
+            }
         }
 
         // save note menu item
@@ -282,6 +288,7 @@ private object UIText {
     const val SAVED_NOTES_LABEL = "Saved Notes"
     const val AUTOSAVE_CHECKBOX_TITLE = "Autosave"
     const val SAVE_SHORTCUT = "ctrl S"
+    const val NEW_NOTE_SHORTCUT = "ctrl N"
     const val SAVE_BUTTON_TOOLTIP = """Saves the current note to the folder "$NOTES_DIR" on your computer"""
     const val LOAD_BUTTON_TOOLTIP = "Refreshes the list of saved notes"
     const val SAVED_NOTES_LIST_TOOLTIP = "Click on a note to view it"
