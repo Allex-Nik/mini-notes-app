@@ -130,8 +130,13 @@ class MainWindow : JFrame() { // BorderLayout by default
         // new note menu item
         val newNoteItem = JMenuItem(UIText.NEW_NOTE_TITLE).apply {
             accelerator = newNoteShortcut
-            iconImage = ImageIcon(this@MainWindow.javaClass.getResource(Icons.NEW_NOTE_ICON))
-                .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
+
+            val newNoteImage = ImageIcon(this@MainWindow.javaClass.getResource(Icons.NEW_NOTE_ICON))
+                .image
+            val newNoteImageScaled = newNoteImage
+                .getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
+            icon = ImageIcon(newNoteImageScaled)
+
             addActionListener {
                 // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
                 if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
