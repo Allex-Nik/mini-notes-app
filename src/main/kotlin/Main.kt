@@ -5,6 +5,7 @@ import java.io.File
 import java.nio.file.Files
 import javax.swing.*
 import javax.swing.border.Border
+import javax.swing.text.AbstractDocument
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.system.exitProcess
@@ -13,6 +14,8 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
     private val leftPanel = JPanel() // FlowLayout by default
+    private val centralPanel = JPanel().apply { layout = BorderLayout() }
+    private val header = JTextField(UIText.START_HEADER_TEXT)
     private val textArea = JTextArea()
     private val savedNotes = mutableListOf<String>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
@@ -118,7 +121,20 @@ class MainWindow : JFrame() { // BorderLayout by default
         // ctrl N - in JTextArea is going to the next line
         // cancel the default behavior for JTextArea when it is in focus
         textArea.getInputMap(JComponent.WHEN_FOCUSED).put(newNoteShortcut, "none")
-        val textScrollPane = JScrollPane(textArea)
+
+        centralPanel.background = Theme.textAreaColor
+
+        header.apply {
+            font = Theme.noteHeaderFont
+            horizontalAlignment = JTextField.CENTER
+            background = Theme.textAreaColor
+        }
+        val document = header.document as AbstractDocument
+        document.documentFilter = HeaderLengthFilter()
+
+        centralPanel.add(header, BorderLayout.NORTH)
+        centralPanel.add(textArea, BorderLayout.CENTER)
+        val textScrollPane = JScrollPane(centralPanel)
         this.add(textScrollPane, BorderLayout.CENTER)
     }
 
@@ -140,6 +156,7 @@ class MainWindow : JFrame() { // BorderLayout by default
             addActionListener {
                 // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
                 if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
+                header.text = UIText.START_HEADER_TEXT
                 textArea.text = ""
                 savedNotesList.clearSelection()
                 statusLabel.text = UIText.NOTE_CREATED_MESSAGE
@@ -183,19 +200,39 @@ class MainWindow : JFrame() { // BorderLayout by default
     private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
 
     // TODO: Implement editing existing notes without creating new ones
+    // TODO: Implement notes deletion
     private fun saveNote() {
         val note = textArea.text
+        val fileName = getNoteName()
 
-        // take the first word of the note, remove punctuation
-        var fileName = note
-            .substringBefore(' ')
-            .trim { !it.isLetterOrDigit() }
+        Files.createDirectories(Path(UIText.NOTES_DIR))
+        File("${UIText.NOTES_DIR}/$fileName").writeText(note)
 
-        // limit the word to 15 characters
-        if (fileName.length > 15) fileName = fileName.take(15)
+        statusLabel.text = UIText.noteSaved(fileName)
 
-        if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
+        readNotes(File(UIText.NOTES_DIR))
+        updateSavedNotesList()
+    }
 
+    private fun getNoteName(): String {
+        var fileName = if (header.text != UIText.START_HEADER_TEXT && header.text.isNotEmpty()) {
+            header.text
+        } else {
+            // take the first word of the note, remove punctuation
+            val note = textArea.text
+            var fileName = note
+                .substringBefore(' ')
+                .trim { !it.isLetterOrDigit() }
+
+            // limit the word to 15 characters
+            if (fileName.length > 15) fileName = fileName.take(15)
+
+            if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
+
+            fileName
+        }
+
+        // TODO: Either fix this logic to work with headers, or remove it and ask user if they want to overwrite the note with this title
         // add an integer suffix if the file with this name already exists
         var end = 1
         while (Path("${UIText.NOTES_DIR}/$fileName${UIText.TXT_EXTENSION}").exists()) {
@@ -207,13 +244,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         }
 
         fileName += UIText.TXT_EXTENSION
-
-        Files.createDirectories(Path(UIText.NOTES_DIR))
-        File("${UIText.NOTES_DIR}/$fileName").writeText(note)
-        statusLabel.text = UIText.noteSaved(fileName)
-
-        readNotes(File(UIText.NOTES_DIR))
-        updateSavedNotesList()
+        return fileName
     }
 
     private fun confirmedSaveNote(): Boolean {
@@ -248,6 +279,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         // which leads to savedNotesList.selectedValue == null and thus an exception
         if (savedNotesList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = savedNotesList.selectedValue
+        header.text = selectedNote.removeSuffix(UIText.TXT_EXTENSION)
         textArea.text = File("${UIText.NOTES_DIR}/$selectedNote").readText()
     }
 
@@ -303,6 +335,7 @@ private object UIText {
     const val EXIT_TITLE = "Exit"
     const val SAVE_TITLE = "Save"
     const val NEW_NOTE_TITLE = "New"
+    const val START_HEADER_TEXT = "Add your header here"
 
     const val CONFIRM_SAVE_MESSAGE = "Do you want to save this note?"
     const val CONFIRM_EXIT_MESSAGE = "Are you sure you want to exit?"
@@ -326,6 +359,7 @@ private object Theme {
     val saveButtonFont = Font("Arial", Font.PLAIN, 18)
     val loadButtonFont = Font("Arial", Font.PLAIN, 18)
     val savedNotesListFont = Font("Arial", Font.PLAIN, 14)
+    val noteHeaderFont = Font("Arial", Font.BOLD, 20)
 
     const val FRAME_WIDTH = 1280
     const val FRAME_HEIGHT = 820
