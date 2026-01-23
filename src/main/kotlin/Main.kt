@@ -1,13 +1,10 @@
 package org.education
 
+import com.mysql.cj.jdbc.MysqlDataSource
 import java.awt.*
-import java.io.File
-import java.nio.file.Files
 import javax.swing.*
 import javax.swing.border.Border
 import javax.swing.text.AbstractDocument
-import kotlin.io.path.Path
-import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
 class MainWindow : JFrame() { // BorderLayout by default
@@ -17,7 +14,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val centralPanel = JPanel().apply { layout = BorderLayout() }
     private val header = JTextField(UIText.START_HEADER_TEXT)
     private val textArea = JTextArea()
-    private val savedNotes = mutableListOf<String>()
+    private val savedNotes = mutableListOf<Note>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
     private var savedNotesList = JList(savedNotes.toTypedArray())
     private val savedNotesLabel = JLabel(UIText.SAVED_NOTES_LABEL, SwingConstants.CENTER)
@@ -29,7 +26,21 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val statusLabel = JLabel(UIText.READY_LABEL)
         .apply { border = Theme.statusPadding }
 
+    val ds = MysqlDataSource().apply {
+        serverName = "localhost" // find out about Unix socket and TCP
+        databaseName = "notesapp"
+        user = System.getenv("MYSQL_USER")
+        password = System.getenv("MYSQL_PASSWORD")
+        description = "Notes App Database"
+    }
+
+    val conn = ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
+    val stmt = conn.createStatement()
+
     init {
+        stmt.execute("DROP TABLE IF EXISTS notes;")
+        val tableNotesSql = "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, title VARCHAR(255), text TEXT);" // MEDIUMTEXT, LONGTEXT
+        stmt.execute(tableNotesSql)
         configureFrame()
         configureLeftPanel()
         configureTextArea()
@@ -110,7 +121,7 @@ class MainWindow : JFrame() { // BorderLayout by default
             font = Theme.savedNotesListFont
         }
 
-        readNotes(File(UIText.NOTES_DIR))
+        readNotes()
         updateSavedNotesList()
 
         leftPanel.add(savedNotesPanel, BorderLayout.CENTER)
@@ -205,12 +216,16 @@ class MainWindow : JFrame() { // BorderLayout by default
         val note = textArea.text
         val fileName = getNoteName()
 
-        Files.createDirectories(Path(UIText.NOTES_DIR))
-        File("${UIText.NOTES_DIR}/$fileName").writeText(note)
+        conn.prepareStatement("INSERT INTO notes (title, text) VALUES (?, ?);").use { stmt ->
+            stmt.setString(1, fileName)
+            stmt.setString(2, note)
+            stmt.executeUpdate()
+        }
+//        stmt.executeUpdate("INSERT INTO notes (title, text) VALUES ('$fileName', '$note');")
 
         statusLabel.text = UIText.noteSaved(fileName)
 
-        readNotes(File(UIText.NOTES_DIR))
+        readNotes()
         updateSavedNotesList()
     }
 
@@ -230,17 +245,6 @@ class MainWindow : JFrame() { // BorderLayout by default
             if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
 
             fileName
-        }
-
-        // TODO: Either fix this logic to work with headers, or remove it and ask user if they want to overwrite the note with this title
-        // add an integer suffix if the file with this name already exists
-        var end = 1
-        while (Path("${UIText.NOTES_DIR}/$fileName${UIText.TXT_EXTENSION}").exists()) {
-            if (fileName.endsWith("_${end - 1}")) {
-                fileName = fileName.removeSuffix("_${end - 1}")
-            }
-            fileName += "_$end"
-            end++
         }
 
         fileName += UIText.TXT_EXTENSION
@@ -268,7 +272,7 @@ class MainWindow : JFrame() { // BorderLayout by default
     }
 
     private fun addLoadButtonListener() = loadButton.addActionListener {
-        readNotes(File(UIText.NOTES_DIR))
+        readNotes()
         updateSavedNotesList()
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
     }
@@ -279,17 +283,21 @@ class MainWindow : JFrame() { // BorderLayout by default
         // which leads to savedNotesList.selectedValue == null and thus an exception
         if (savedNotesList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = savedNotesList.selectedValue
-        header.text = selectedNote.removeSuffix(UIText.TXT_EXTENSION)
-        textArea.text = File("${UIText.NOTES_DIR}/$selectedNote").readText()
+        header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
+
+        conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
+            stmt.setLong(1, selectedNote.id)
+            stmt.executeQuery().use { res ->
+                textArea.text = if (res.next()) res.getString("text") else ""
+            }
+        }
     }
 
-    private fun readNotes(dir: File) {
+    private fun readNotes() {
         savedNotes.clear()
-        if (dir.exists()) {
-            dir.listFiles()?.forEach { file ->
-                if (file.isFile && file.name.endsWith(UIText.TXT_EXTENSION)) {
-                    savedNotes.add(file.name)
-                }
+        stmt.executeQuery("SELECT id, title FROM notes;").use { res ->
+            while (res.next()) {
+                savedNotes.add(Note(res.getLong("id"), res.getString("title")))
             }
         }
     }
@@ -312,6 +320,10 @@ fun main() {
         val frame = MainWindow()
         frame.isVisible = true
     }
+}
+
+data class Note(val id: Long, val title: String) {
+    override fun toString(): String = title
 }
 
 private object UIText {
