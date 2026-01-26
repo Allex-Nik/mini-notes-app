@@ -7,7 +7,7 @@ import javax.swing.border.Border
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
-class MainWindow : JFrame() { // BorderLayout by default
+class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayout by default
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
     private val leftPanel = JPanel() // FlowLayout by default
@@ -26,21 +26,9 @@ class MainWindow : JFrame() { // BorderLayout by default
     private val statusLabel = JLabel(UIText.READY_LABEL)
         .apply { border = Theme.statusPadding }
 
-    val ds = MysqlDataSource().apply {
-        serverName = "localhost" // find out about Unix socket and TCP
-        databaseName = "notesapp"
-        user = System.getenv("MYSQL_USER")
-        password = System.getenv("MYSQL_PASSWORD")
-        description = "Notes App Database"
-    }
-
-    val conn = ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
-    val stmt = conn.createStatement()
-
     init {
-        stmt.execute("DROP TABLE IF EXISTS notes;")
-        val tableNotesSql = "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, title VARCHAR(255), text TEXT);" // MEDIUMTEXT, LONGTEXT
-        stmt.execute(tableNotesSql)
+        noteRepository.dropNotesTable()
+        noteRepository.createNotesTable()
         configureFrame()
         configureLeftPanel()
         configureTextArea()
@@ -216,12 +204,7 @@ class MainWindow : JFrame() { // BorderLayout by default
         val note = textArea.text
         val fileName = getNoteName()
 
-        conn.prepareStatement("INSERT INTO notes (title, text) VALUES (?, ?);").use { stmt ->
-            stmt.setString(1, fileName)
-            stmt.setString(2, note)
-            stmt.executeUpdate()
-        }
-//        stmt.executeUpdate("INSERT INTO notes (title, text) VALUES ('$fileName', '$note');")
+        noteRepository.insertNote(fileName, note) // TODO: Don't work with DB on EDT
 
         statusLabel.text = UIText.noteSaved(fileName)
 
@@ -285,21 +268,13 @@ class MainWindow : JFrame() { // BorderLayout by default
         val selectedNote = savedNotesList.selectedValue
         header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
 
-        conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
-            stmt.setLong(1, selectedNote.id)
-            stmt.executeQuery().use { res ->
-                textArea.text = if (res.next()) res.getString("text") else ""
-            }
-        }
+        textArea.text = noteRepository.selectNote(selectedNote.id)
     }
 
     private fun readNotes() {
         savedNotes.clear()
-        stmt.executeQuery("SELECT id, title FROM notes;").use { res ->
-            while (res.next()) {
-                savedNotes.add(Note(res.getLong("id"), res.getString("title")))
-            }
-        }
+        val loadedNotes = noteRepository.loadAllNotes()
+        savedNotes.addAll(loadedNotes)
     }
 
     private fun updateSavedNotesList() {
@@ -316,18 +291,22 @@ class MainWindow : JFrame() { // BorderLayout by default
 }
 
 fun main() {
+    val ds = MysqlDataSource().apply {
+        serverName = "localhost" // find out about Unix socket and TCP
+        databaseName = "notesapp"
+        user = System.getenv("MYSQL_USER")
+        password = System.getenv("MYSQL_PASSWORD")
+        description = "Notes App Database"
+    }
+    val noteRepository = NoteRepository(ds)
+
     SwingUtilities.invokeLater {
-        val frame = MainWindow()
+        val frame = MainWindow(noteRepository)
         frame.isVisible = true
     }
 }
 
-data class Note(val id: Long, val title: String) {
-    override fun toString(): String = title
-}
-
 private object UIText {
-    const val NOTES_DIR = "notes"
     const val EMPTY_NOTE_TITLE = "empty_note"
     const val TXT_EXTENSION = ".txt"
 
@@ -338,7 +317,7 @@ private object UIText {
     const val AUTOSAVE_CHECKBOX_TITLE = "Autosave"
     const val SAVE_SHORTCUT = "ctrl S"
     const val NEW_NOTE_SHORTCUT = "ctrl N"
-    const val SAVE_BUTTON_TOOLTIP = """Saves the current note to the folder "$NOTES_DIR" on your computer"""
+    const val SAVE_BUTTON_TOOLTIP = """Saves the current note to the database"""
     const val LOAD_BUTTON_TOOLTIP = "Refreshes the list of saved notes"
     const val SAVED_NOTES_LIST_TOOLTIP = "Click on a note to view it"
     const val MAIN_MENU_TITLE = "Menu"
