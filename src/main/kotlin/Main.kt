@@ -27,7 +27,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         .apply { border = Theme.statusPadding }
 
     init {
-        noteRepository.dropNotesTable()
+        noteRepository.dropNotesTable() // left for development
         noteRepository.createNotesTable()
         configureFrame()
         configureLeftPanel()
@@ -116,12 +116,14 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     private fun configureTextArea() {
-        textArea.background = Theme.textAreaColor
-        // ctrl N - in JTextArea is going to the next line
-        // cancel the default behavior for JTextArea when it is in focus
-        textArea.getInputMap(JComponent.WHEN_FOCUSED).put(newNoteShortcut, "none")
-
-        centralPanel.background = Theme.textAreaColor
+        textArea.apply {
+            background = Theme.textAreaColor
+            // ctrl N - in JTextArea is going to the next line
+            // cancel the default behavior for JTextArea when it is in focus
+            getInputMap(JComponent.WHEN_FOCUSED).put(newNoteShortcut, "none")
+            lineWrap = true
+            wrapStyleWord = true
+        }
 
         header.apply {
             font = Theme.noteHeaderFont
@@ -131,10 +133,13 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         val document = header.document as AbstractDocument
         document.documentFilter = HeaderLengthFilter()
 
-        centralPanel.add(header, BorderLayout.NORTH)
-        centralPanel.add(textArea, BorderLayout.CENTER)
-        val textScrollPane = JScrollPane(centralPanel)
-        this.add(textScrollPane, BorderLayout.CENTER)
+        val textScrollPane = JScrollPane(textArea)
+        centralPanel.apply {
+            background = Theme.textAreaColor
+            add(header, BorderLayout.NORTH)
+            add(textScrollPane, BorderLayout.CENTER)
+        }
+        this.add(centralPanel, BorderLayout.CENTER)
     }
 
     private fun configureMenuBar() {
@@ -356,7 +361,7 @@ private object Theme {
     const val FRAME_HEIGHT = 820
     const val MENU_ICON_HEIGHT = 20
     const val MENU_ICON_WIDTH = 20
-    val leftPanelSize = Dimension(200, 800)
+    val leftPanelSize = Dimension(300, 800)
     val saveButtonSize = Dimension(90, 50)
     val loadButtonSize = Dimension(90, 50)
     val buttonsPadding: Border = BorderFactory.createEmptyBorder(40, 10, 20, 10)
