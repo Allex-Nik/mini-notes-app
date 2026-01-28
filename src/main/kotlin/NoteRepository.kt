@@ -30,6 +30,11 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
         }
     }
 
+    fun deleteNote(id: Long) = conn.prepareStatement("DELETE FROM notes WHERE id = ?").use { stmt ->
+        stmt.setLong(1, id)
+        stmt.executeUpdate()
+    }
+
     fun loadAllNotes(): List<Note> = stmt.executeQuery("SELECT id, title FROM notes;").use { res ->
         val notes = mutableListOf<Note>()
         while (res.next()) {

@@ -3,13 +3,13 @@ package org.education
 import com.mysql.cj.jdbc.MysqlDataSource
 import java.awt.*
 import javax.swing.*
-import javax.swing.border.Border
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
 class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayout by default
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
+    private val removeButton = JButton(UIText.REMOVE_BUTTON_TITLE)
     private val leftPanel = JPanel() // FlowLayout by default
     private val centralPanel = JPanel().apply { layout = BorderLayout() }
     private val header = JTextField(UIText.START_HEADER_TEXT)
@@ -27,7 +27,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         .apply { border = Theme.statusPadding }
 
     init {
-        noteRepository.dropNotesTable() // left for development
+//        noteRepository.dropNotesTable() // left for development
         noteRepository.createNotesTable()
         configureFrame()
         configureLeftPanel()
@@ -87,10 +87,15 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
             font = Theme.loadButtonFont
         }
 
+        removeButton.apply {
+            preferredSize = Theme.removeButtonSize
+            toolTipText = UIText.REMOVE_BUTTON_TOOLTIP
+            font = Theme.removeButtonFont
+        }
+
         buttonsPanel.add(saveButton, BorderLayout.NORTH)
-        // make buttons further from each other to avoid misclicks
-        buttonsPanel.add(Box.createRigidArea(Theme.gapBetweenButtons), BorderLayout.CENTER)
-        buttonsPanel.add(loadButton, BorderLayout.SOUTH)
+        buttonsPanel.add(loadButton, BorderLayout.CENTER)
+        buttonsPanel.add(removeButton, BorderLayout.SOUTH)
 
         leftPanel.add(buttonsPanel, BorderLayout.NORTH)
     }
@@ -198,13 +203,13 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private fun addListeners() {
         addSaveButtonListener()
         addLoadButtonListener()
+        addRemoveButtonListener()
         addNotesSelectionListener()
     }
 
     private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
 
     // TODO: Implement editing existing notes without creating new ones
-    // TODO: Implement notes deletion
     private fun saveNote() {
         val note = textArea.text
         val fileName = getNoteName()
@@ -239,11 +244,22 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         return fileName
     }
 
+    // TODO: Unify the "confirm" methods
     private fun confirmedSaveNote(): Boolean {
         val choice = JOptionPane.showConfirmDialog(
             this,
             UIText.CONFIRM_SAVE_MESSAGE,
             UIText.CONFIRM_SAVE_NOTE_TITLE,
+            JOptionPane.YES_NO_OPTION
+        )
+        return choice == JOptionPane.YES_OPTION
+    }
+
+    private fun confirmedDeleteNote(): Boolean {
+        val choice = JOptionPane.showConfirmDialog(
+            this,
+            UIText.CONFIRM_DELETE_MESSAGE,
+            UIText.CONFIRM_DELETE_NOTE_TITLE,
             JOptionPane.YES_NO_OPTION
         )
         return choice == JOptionPane.YES_OPTION
@@ -263,6 +279,21 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         readNotes()
         updateSavedNotesList()
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
+    }
+
+    private fun addRemoveButtonListener() = removeButton.addActionListener {
+        if (savedNotesList.isSelectionEmpty) return@addActionListener
+        if (confirmedDeleteNote()) removeNote()
+    }
+
+    private fun removeNote() {
+        val selectedNote = savedNotesList.selectedValue
+        noteRepository.deleteNote(selectedNote.id)
+        statusLabel.text = UIText.noteDeleted(getNoteName())
+        textArea.text = ""
+        header.text = UIText.START_HEADER_TEXT
+        readNotes()
+        updateSavedNotesList()
     }
 
     // TODO: When add some text and then select another note, autosave if the checkbox is checked, ask about saving otherwise
@@ -309,69 +340,4 @@ fun main() {
         val frame = MainWindow(noteRepository)
         frame.isVisible = true
     }
-}
-
-private object UIText {
-    const val EMPTY_NOTE_TITLE = "empty_note"
-    const val TXT_EXTENSION = ".txt"
-
-    const val FRAME_TITLE = "Notes"
-    const val SAVE_BUTTON_TITLE = "Save"
-    const val LOAD_BUTTON_TITLE = "Load"
-    const val SAVED_NOTES_LABEL = "Saved Notes"
-    const val AUTOSAVE_CHECKBOX_TITLE = "Autosave"
-    const val SAVE_SHORTCUT = "ctrl S"
-    const val NEW_NOTE_SHORTCUT = "ctrl N"
-    const val SAVE_BUTTON_TOOLTIP = """Saves the current note to the database"""
-    const val LOAD_BUTTON_TOOLTIP = "Refreshes the list of saved notes"
-    const val SAVED_NOTES_LIST_TOOLTIP = "Click on a note to view it"
-    const val MAIN_MENU_TITLE = "Menu"
-    const val AUTOSAVE_MENU_TITLE = "Autosave"
-    const val CONFIRM_SAVE_NOTE_TITLE = "Save Note"
-    const val EXIT_TITLE = "Exit"
-    const val SAVE_TITLE = "Save"
-    const val NEW_NOTE_TITLE = "New"
-    const val START_HEADER_TEXT = "Add your header here"
-
-    const val CONFIRM_SAVE_MESSAGE = "Do you want to save this note?"
-    const val CONFIRM_EXIT_MESSAGE = "Are you sure you want to exit?"
-    const val NOTES_UPDATED_MESSAGE = "Notes list updated successfully"
-    const val NOTE_CREATED_MESSAGE = "New note created successfully"
-
-    const val READY_LABEL = "Ready"
-
-    fun noteSaved(fileName: String) = "Note $fileName saved successfully"
-}
-
-private object Theme {
-    val buttonsPanelColor = Color(244, 231, 207)
-    val savedNotesPanelColor = Color(244, 231, 207)
-    val savedNotesListColor = Color(244, 231, 207)
-    val textAreaColor = Color(255, 247, 232)
-    val selectBackground: Color = Color.WHITE
-    val selectForeground: Color = Color.BLACK
-
-    val savedNotesLabelFont = Font("Arial", Font.PLAIN, 18)
-    val saveButtonFont = Font("Arial", Font.PLAIN, 18)
-    val loadButtonFont = Font("Arial", Font.PLAIN, 18)
-    val savedNotesListFont = Font("Arial", Font.PLAIN, 14)
-    val noteHeaderFont = Font("Arial", Font.BOLD, 20)
-
-    const val FRAME_WIDTH = 1280
-    const val FRAME_HEIGHT = 820
-    const val MENU_ICON_HEIGHT = 20
-    const val MENU_ICON_WIDTH = 20
-    val leftPanelSize = Dimension(300, 800)
-    val saveButtonSize = Dimension(90, 50)
-    val loadButtonSize = Dimension(90, 50)
-    val buttonsPadding: Border = BorderFactory.createEmptyBorder(40, 10, 20, 10)
-    val gapBetweenButtons = Dimension(0, 10)
-    val statusPadding: Border = BorderFactory.createEmptyBorder(0, 10, 0, 0)
-}
-
-private object Icons {
-    const val APP_ICON = "/app-icon.png"
-    const val NEW_NOTE_ICON = "/new-note.jpeg"
-    const val SAVE_NOTE_ICON = "/save-note.jpeg"
-    const val EXIT_ICON = "/exit.jpeg"
 }
