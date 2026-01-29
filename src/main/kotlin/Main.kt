@@ -1,7 +1,10 @@
 package org.education
 
 import com.mysql.cj.jdbc.MysqlDataSource
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.Image
+import java.awt.Taskbar
 import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
@@ -28,7 +31,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
 
     init {
 //        noteRepository.dropNotesTable() // left for development
-        noteRepository.createNotesTable()
+        noteRepository.createNotesTableIfNotExists()
         configureFrame()
         configureLeftPanel()
         configureTextArea()
@@ -292,7 +295,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         statusLabel.text = UIText.noteDeleted(getNoteName())
         textArea.text = ""
         header.text = UIText.START_HEADER_TEXT
-        readNotes()
+        readNotes() // heavy operation, better to avoid
         updateSavedNotesList()
     }
 
@@ -314,7 +317,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     private fun updateSavedNotesList() {
-        savedNotesPanel.removeAll()
+        savedNotesPanel.removeAll() // change only notes we need
         savedNotesPanel.add(savedNotesLabel, BorderLayout.NORTH)
         savedNotesList.setListData(savedNotes.toTypedArray())
         savedNotesPanel.add(Box.createRigidArea(Dimension(0, 20)), BorderLayout.CENTER)
