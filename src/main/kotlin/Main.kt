@@ -2,7 +2,6 @@ package org.education
 
 import com.mysql.cj.jdbc.MysqlDataSource
 import java.awt.BorderLayout
-import java.awt.Dimension
 import java.awt.Image
 import java.awt.Taskbar
 import javax.swing.*
@@ -320,10 +319,8 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         savedNotesPanel.removeAll() // change only notes we need
         savedNotesPanel.add(savedNotesLabel, BorderLayout.NORTH)
         savedNotesList.setListData(savedNotes.toTypedArray())
-        savedNotesPanel.add(Box.createRigidArea(Dimension(0, 20)), BorderLayout.CENTER)
-        savedNotesPanel.add(savedNotesList, BorderLayout.CENTER)
         savedNotesScrollPane = JScrollPane(savedNotesList)
-        savedNotesPanel.add(savedNotesScrollPane)
+        savedNotesPanel.add(savedNotesScrollPane, BorderLayout.CENTER)
         savedNotesPanel.revalidate()
         savedNotesPanel.repaint()
     }
