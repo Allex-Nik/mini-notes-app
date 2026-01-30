@@ -20,12 +20,25 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
     }
 
     fun insertNote(title: String, text: String) =
-        conn.prepareStatement("INSERT INTO notes (creationDateTime, title, text) VALUES (?, ?, ?);").use { stmt ->
+        conn.prepareStatement(
+            "INSERT INTO notes (creationDateTime, title, text) VALUES (?, ?, ?);",
+            Statement.RETURN_GENERATED_KEYS
+        ).use { stmt ->
             stmt.setTimestamp(1, Timestamp.from(Instant.now()))
             stmt.setString(2, title)
             stmt.setString(3, text)
             stmt.executeUpdate()
+            stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else throw Exception("Failed to insert a new note") }
         }
+
+    fun updateNote(id: Long, title: String, text: String) {
+        conn.prepareStatement("UPDATE notes SET title = ?, text = ? WHERE id = ?").use { stmt ->
+            stmt.setString(1, title)
+            stmt.setString(2, text)
+            stmt.setLong(3, id)
+            stmt.executeUpdate()
+        }
+    }
 
     fun selectNote(id: Long): String = conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
         stmt.setLong(1, id)

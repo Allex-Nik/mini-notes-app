@@ -18,7 +18,8 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private val textArea = JTextArea()
     private val savedNotes = mutableListOf<Note>()
     private val savedNotesPanel = JPanel() // FlowLayout by default
-    private var savedNotesList = JList(savedNotes.toTypedArray())
+    private var savedNotesList =
+        JList(savedNotes.toTypedArray()) // TODO: Try DefaultListModel to avoid using setListData
     private val savedNotesLabel = JLabel(UIText.SAVED_NOTES_LABEL, SwingConstants.CENTER)
         .apply { font = Theme.savedNotesLabelFont }
     private lateinit var savedNotesScrollPane: JScrollPane
@@ -27,6 +28,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private val newNoteShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.NEW_NOTE_SHORTCUT)
     private val statusLabel = JLabel(UIText.READY_LABEL)
         .apply { border = Theme.statusPadding }
+    private var currentNoteId: Long? = null
 
     init {
 //        noteRepository.dropNotesTable() // left for development
@@ -167,6 +169,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
             addActionListener {
                 // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
                 if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
+                currentNoteId = null
                 header.text = UIText.START_HEADER_TEXT
                 textArea.text = ""
                 savedNotesList.clearSelection()
@@ -211,17 +214,23 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
 
     private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
 
-    // TODO: Implement editing existing notes without creating new ones
     private fun saveNote() {
         val note = textArea.text
         val fileName = getNoteName()
 
-        noteRepository.insertNote(fileName, note) // TODO: Don't work with DB on EDT
+        val id = currentNoteId
+        currentNoteId = if (id == null) {
+            noteRepository.insertNote(fileName, note) // TODO: Don't work with DB on EDT
+        } else {
+            noteRepository.updateNote(id, fileName, note)
+            id
+        }
 
         statusLabel.text = UIText.noteSaved(fileName)
 
         readNotes()
         updateSavedNotesList()
+        restoreSelection()
     }
 
     private fun getNoteName(): String {
@@ -244,6 +253,18 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
 
         fileName += UIText.TXT_EXTENSION
         return fileName
+    }
+
+    private fun restoreSelection() {
+        val id = currentNoteId ?: return
+        val noteIndexToSelect = savedNotes.indexOfFirst { it.id == id }
+        if (noteIndexToSelect >= 0) {
+            savedNotesList.selectedIndex = noteIndexToSelect
+            savedNotesList.ensureIndexIsVisible(noteIndexToSelect)
+        } else { // do we need this branch?
+            currentNoteId = null
+            savedNotesList.clearSelection()
+        }
     }
 
     // TODO: Unify the "confirm" methods
@@ -280,6 +301,10 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private fun addLoadButtonListener() = loadButton.addActionListener {
         readNotes()
         updateSavedNotesList()
+        // if currentNoteId != null, selection restored. if it is null, this step is skipped.
+        // TODO: Keep an eye on synchronization between currentNoteId and savedNotesList.selectedValue.id.
+        //  Consider currentNoteId = savedNotesList.selectedValue?.id
+        restoreSelection()
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
     }
 
@@ -291,7 +316,8 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private fun removeNote() {
         val selectedNote = savedNotesList.selectedValue
         noteRepository.deleteNote(selectedNote.id)
-        statusLabel.text = UIText.noteDeleted(getNoteName())
+        currentNoteId = null
+        statusLabel.text = UIText.noteDeleted(selectedNote.title)
         textArea.text = ""
         header.text = UIText.START_HEADER_TEXT
         readNotes() // heavy operation, better to avoid
@@ -304,6 +330,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         // which leads to savedNotesList.selectedValue == null and thus an exception
         if (savedNotesList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = savedNotesList.selectedValue
+        currentNoteId = selectedNote.id
         header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
 
         textArea.text = noteRepository.selectNote(selectedNote.id)
