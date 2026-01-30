@@ -15,27 +15,30 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
 
     fun createNotesTableIfNotExists(): Boolean {
         val tableNotesSql =
-            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, title VARCHAR(255), text TEXT);" // MEDIUMTEXT, LONGTEXT
+            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR(255), text TEXT);" // MEDIUMTEXT, LONGTEXT
         return stmt.execute(tableNotesSql)
     }
 
     fun insertNote(title: String, text: String) =
         conn.prepareStatement(
-            "INSERT INTO notes (creationDateTime, title, text) VALUES (?, ?, ?);",
+            "INSERT INTO notes (creationDateTime, lastEditedDateTime, title, text) VALUES (?, ?, ?, ?);",
             Statement.RETURN_GENERATED_KEYS
         ).use { stmt ->
-            stmt.setTimestamp(1, Timestamp.from(Instant.now()))
-            stmt.setString(2, title)
-            stmt.setString(3, text)
+            val now = Timestamp.from(Instant.now())
+            stmt.setTimestamp(1, now)
+            stmt.setTimestamp(2, now)
+            stmt.setString(3, title)
+            stmt.setString(4, text)
             stmt.executeUpdate()
             stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else throw Exception("Failed to insert a new note") }
         }
 
     fun updateNote(id: Long, title: String, text: String) {
-        conn.prepareStatement("UPDATE notes SET title = ?, text = ? WHERE id = ?").use { stmt ->
-            stmt.setString(1, title)
-            stmt.setString(2, text)
-            stmt.setLong(3, id)
+        conn.prepareStatement("UPDATE notes SET lastEditedDateTime = ?, title = ?, text = ? WHERE id = ?").use { stmt ->
+            stmt.setTimestamp(1, Timestamp.from(Instant.now()))
+            stmt.setString(2, title)
+            stmt.setString(3, text)
+            stmt.setLong(4, id)
             stmt.executeUpdate()
         }
     }
@@ -52,13 +55,14 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
         stmt.executeUpdate()
     }
 
-    fun loadAllNotes(): List<Note> = stmt.executeQuery("SELECT id, creationDateTime, title FROM notes;").use { res ->
+    fun loadAllNotes(): List<Note> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
         val notes = mutableListOf<Note>()
         while (res.next()) {
             notes.add(
                 Note(
                     res.getLong("id"),
                     res.getTimestamp("creationDateTime")?.toInstant(),
+                    res.getTimestamp("lastEditedDateTime")?.toInstant(),
                     res.getString("title")
                 )
             )
