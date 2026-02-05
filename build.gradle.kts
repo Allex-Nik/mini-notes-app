@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation("com.mysql:mysql-connector-j:9.5.0")
+    implementation("org.hibernate:hibernate-core:7.2.2.Final")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
     testImplementation(kotlin("test"))

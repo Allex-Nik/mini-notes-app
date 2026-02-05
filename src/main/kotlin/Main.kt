@@ -8,7 +8,7 @@ import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
-class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayout by default
+class MainWindow(val noteRepository: NoteRepositoryHibernateImpl) : JFrame() { // BorderLayout by default
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
     private val removeButton = JButton(UIText.REMOVE_BUTTON_TITLE)
@@ -16,10 +16,10 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     private val centralPanel = JPanel().apply { layout = BorderLayout() }
     private val header = JTextField(UIText.START_HEADER_TEXT)
     private val textArea = JTextArea()
-    private val savedNotes = mutableListOf<Note>()
-    private val savedNotesPanel = JPanel() // FlowLayout by default
-    private var savedNotesList =
-        JList(savedNotes.toTypedArray()) // TODO: Try DefaultListModel to avoid using setListData
+    private val noteListItems = mutableListOf<NoteListItem>()
+    private val notesPanel = JPanel() // FlowLayout by default
+    private var notesJList =
+        JList(noteListItems.toTypedArray()) // TODO: Try DefaultListModel to avoid using setListData
     private val savedNotesLabel = JLabel(UIText.SAVED_NOTES_LABEL, SwingConstants.CENTER)
         .apply { font = Theme.savedNotesLabelFont }
     private lateinit var savedNotesScrollPane: JScrollPane
@@ -32,7 +32,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
 
     init {
 //        noteRepository.dropNotesTable() // left for development
-        noteRepository.createNotesTableIfNotExists()
+//        noteRepository.createNotesTableIfNotExists()
         configureFrame()
         configureLeftPanel()
         configureTextArea()
@@ -105,12 +105,12 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     private fun configureSavedNotesPanel() {
-        savedNotesPanel.apply {
+        notesPanel.apply {
             layout = BorderLayout()
             background = Theme.savedNotesPanelColor
         }
 
-        savedNotesList.apply {
+        notesJList.apply {
             background = Theme.savedNotesListColor
             selectionBackground = Theme.selectBackground
             selectionForeground = Theme.selectForeground
@@ -121,7 +121,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
         readNotes()
         updateSavedNotesList()
 
-        leftPanel.add(savedNotesPanel, BorderLayout.CENTER)
+        leftPanel.add(notesPanel, BorderLayout.CENTER)
     }
 
     private fun configureTextArea() {
@@ -172,7 +172,7 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
                 currentNoteId = null
                 header.text = UIText.START_HEADER_TEXT
                 textArea.text = ""
-                savedNotesList.clearSelection()
+                notesJList.clearSelection()
                 statusLabel.text = UIText.NOTE_CREATED_MESSAGE
             }
         }
@@ -257,13 +257,13 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
 
     private fun restoreSelection() {
         val id = currentNoteId ?: return
-        val noteIndexToSelect = savedNotes.indexOfFirst { it.id == id }
+        val noteIndexToSelect = noteListItems.indexOfFirst { it.id == id }
         if (noteIndexToSelect >= 0) {
-            savedNotesList.selectedIndex = noteIndexToSelect
-            savedNotesList.ensureIndexIsVisible(noteIndexToSelect)
+            notesJList.selectedIndex = noteIndexToSelect
+            notesJList.ensureIndexIsVisible(noteIndexToSelect)
         } else { // do we need this branch?
             currentNoteId = null
-            savedNotesList.clearSelection()
+            notesJList.clearSelection()
         }
     }
 
@@ -309,12 +309,12 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     private fun addRemoveButtonListener() = removeButton.addActionListener {
-        if (savedNotesList.isSelectionEmpty) return@addActionListener
+        if (notesJList.isSelectionEmpty) return@addActionListener
         if (confirmedDeleteNote()) removeNote()
     }
 
     private fun removeNote() {
-        val selectedNote = savedNotesList.selectedValue
+        val selectedNote = notesJList.selectedValue
         noteRepository.deleteNote(selectedNote.id)
         currentNoteId = null
         statusLabel.text = UIText.noteDeleted(selectedNote.title)
@@ -325,11 +325,11 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     // TODO: When add some text and then select another note, autosave if the checkbox is checked, ask about saving otherwise
-    private fun addNotesSelectionListener() = savedNotesList.addListSelectionListener {
+    private fun addNotesSelectionListener() = notesJList.addListSelectionListener {
         // setListData in updateSavedNotesList removes selection and triggers this listener
         // which leads to savedNotesList.selectedValue == null and thus an exception
-        if (savedNotesList.isSelectionEmpty) return@addListSelectionListener
-        val selectedNote = savedNotesList.selectedValue
+        if (notesJList.isSelectionEmpty) return@addListSelectionListener
+        val selectedNote = notesJList.selectedValue
         currentNoteId = selectedNote.id
         header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
 
@@ -337,19 +337,19 @@ class MainWindow(val noteRepository: NoteRepository) : JFrame() { // BorderLayou
     }
 
     private fun readNotes() {
-        savedNotes.clear()
+        noteListItems.clear()
         val loadedNotes = noteRepository.loadAllNotes()
-        savedNotes.addAll(loadedNotes)
+        noteListItems.addAll(loadedNotes)
     }
 
     private fun updateSavedNotesList() {
-        savedNotesPanel.removeAll() // change only notes we need
-        savedNotesPanel.add(savedNotesLabel, BorderLayout.NORTH)
-        savedNotesList.setListData(savedNotes.toTypedArray())
-        savedNotesScrollPane = JScrollPane(savedNotesList)
-        savedNotesPanel.add(savedNotesScrollPane, BorderLayout.CENTER)
-        savedNotesPanel.revalidate()
-        savedNotesPanel.repaint()
+        notesPanel.removeAll() // change only notes we need
+        notesPanel.add(savedNotesLabel, BorderLayout.NORTH)
+        notesJList.setListData(noteListItems.toTypedArray())
+        savedNotesScrollPane = JScrollPane(notesJList)
+        notesPanel.add(savedNotesScrollPane, BorderLayout.CENTER)
+        notesPanel.revalidate()
+        notesPanel.repaint()
     }
 }
 
@@ -361,10 +361,10 @@ fun main() {
         password = System.getenv("MYSQL_PASSWORD")
         description = "Notes App Database"
     }
-    val noteRepository = NoteRepository(ds)
+    val noteRepository = NoteRepositoryHibernateImpl() // NoteRepository(ds)
 
     SwingUtilities.invokeLater {
-        val frame = MainWindow(noteRepository)
+        val frame = MainWindow(noteRepository) // dependency injection (DI)
         frame.isVisible = true
     }
 }

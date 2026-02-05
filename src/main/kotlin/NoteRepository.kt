@@ -55,11 +55,11 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
         stmt.executeUpdate()
     }
 
-    fun loadAllNotes(): List<Note> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
-        val notes = mutableListOf<Note>()
+    fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
+        val noteListItems = mutableListOf<NoteListItem>()
         while (res.next()) {
-            notes.add(
-                Note(
+            noteListItems.add(
+                NoteListItem(
                     res.getLong("id"),
                     res.getTimestamp("creationDateTime")?.toInstant(),
                     res.getTimestamp("lastEditedDateTime")?.toInstant(),
@@ -67,6 +67,6 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
                 )
             )
         }
-        return notes
+        return noteListItems
     }
 }

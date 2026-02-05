@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<hibernate-configuration>
+    <session-factory>
+        <!-- MySQL connection -->
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/notesapp</property>
+        <!-- Add your credentials -->
+        <property name="hibernate.connection.username"></property>
+        <property name="hibernate.connection.password"></property>
+
+        <!-- Connection pool: HikariCP via Hibernate integration -->
+        <!-- <property name="hibernate.connection.provider_class">org.hibernate.hikaricp.internal.HikariCPConnectionProvider</property> -->
+        <!-- <property name="hibernate.hikari.maximumPoolSize">5</property> -->
+
+        <!-- Hibernate Dialect -->
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+        <!-- Automatic schema generation -->
+        <!-- Options: https://docs.hibernate.org/orm/7.2/introduction/html_single/#automatic-schema-export -->
+        <!-- Although Hibernate provides the update option for the hibernate.hbm2ddl.auto configuration property,
+        this feature is not suitable for a production environment:
+        https://docs.hibernate.org/orm/7.2/userguide/html_single/#best-practices-schema -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <!-- Logging -->
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+
+        <!-- Mappings -->
+        <mapping class="org.education.Note"/>
+    </session-factory>
+</hibernate-configuration>
