@@ -16,7 +16,7 @@ class NoteRepositoryHibernateImpl : NoteRepository {
     override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->
             val note =
-                Note(creationDateTime = Instant.now(), lastEditedDateTime = Instant.now(), title = title, text = text)
+                Note(creationDateTime = Instant.now(), lastEditedDateTime = Instant.now(), title = title, text = text, removed = false)
             session.persist(note)
             note.id ?: error("id was not generated")
         }
@@ -41,7 +41,7 @@ class NoteRepositoryHibernateImpl : NoteRepository {
 
     override fun deleteNote(id: Long): Int =
         sessionFactory.fromTransaction { session ->
-            session.createMutationQuery("DELETE FROM Note n WHERE n.id = :id")
+            session.createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
                 .setParameter("id", id)
                 .executeUpdate()
         }
@@ -49,7 +49,7 @@ class NoteRepositoryHibernateImpl : NoteRepository {
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.NoteListItem(n.id, n.creationDateTime, n.lastEditedDateTime, n.title) FROM Note n",
+                "SELECT new org.education.NoteListItem(n.id, n.creationDateTime, n.lastEditedDateTime, n.title) FROM Note n WHERE n.removed = false",
                 NoteListItem::class.java
             )
                 .resultList
