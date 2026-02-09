@@ -1,6 +1,7 @@
 package org.education
 
 import com.mysql.cj.jdbc.MysqlDataSource
+import org.education.repository.NoteRepositoryHibernateImpl
 import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
@@ -334,7 +335,7 @@ fun main() {
         password = System.getenv("MYSQL_PASSWORD")
         description = "Notes App Database"
     }
-    val noteRepository = NoteRepositoryHibernateImpl() // NoteRepository(ds)
+    val noteRepository = NoteRepositoryHibernateImpl() // NoteRepositoryJdbcImpl(ds)
     val noteService = NoteService(noteRepository)
 
     SwingUtilities.invokeLater {

@@ -1,6 +1,8 @@
 package org.education
 
-class NoteService(private val noteRepository: NoteRepositoryHibernateImpl) {
+import org.education.repository.NoteRepository
+
+class NoteService(private val noteRepository: NoteRepository) {
     fun getNoteName(header: String, text: String): String {
         var fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
             header

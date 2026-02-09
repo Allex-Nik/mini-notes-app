@@ -1,12 +1,13 @@
-package org.education
+package org.education.repository
 
+import org.education.NoteListItem
 import java.sql.Connection
 import java.sql.Statement
 import java.sql.Timestamp
 import java.time.Instant
 import javax.sql.DataSource
 
-class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" - data access object
+class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos the name contains "DAO" - data access object
     val conn: Connection =
         ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
     val stmt: Statement = conn.createStatement() // TODO: what if connection is closed?
@@ -19,7 +20,7 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
         return stmt.execute(tableNotesSql)
     }
 
-    fun insertNote(title: String, text: String) =
+    override fun insertNote(title: String, text: String) =
         conn.prepareStatement(
             "INSERT INTO notes (creationDateTime, lastEditedDateTime, title, text) VALUES (?, ?, ?, ?);",
             Statement.RETURN_GENERATED_KEYS
@@ -33,7 +34,7 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
             stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else throw Exception("Failed to insert a new note") }
         }
 
-    fun updateNote(id: Long, title: String, text: String) {
+    override fun updateNote(id: Long, title: String, text: String) {
         conn.prepareStatement("UPDATE notes SET lastEditedDateTime = ?, title = ?, text = ? WHERE id = ?").use { stmt ->
             stmt.setTimestamp(1, Timestamp.from(Instant.now()))
             stmt.setString(2, title)
@@ -43,19 +44,19 @@ class NoteRepository(ds: DataSource) { // in some repos the name contains "DAO" 
         }
     }
 
-    fun selectNote(id: Long): String = conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
+    override fun selectNote(id: Long): String = conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
         stmt.setLong(1, id)
         return stmt.executeQuery().use { res ->
             if (res.next()) res.getString("text") else ""
         }
     }
 
-    fun deleteNote(id: Long) = conn.prepareStatement("DELETE FROM notes WHERE id = ?").use { stmt ->
+    override fun deleteNote(id: Long) = conn.prepareStatement("DELETE FROM notes WHERE id = ?").use { stmt ->
         stmt.setLong(1, id)
         stmt.executeUpdate()
     }
 
-    fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
+    override fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
         val noteListItems = mutableListOf<NoteListItem>()
         while (res.next()) {
             noteListItems.add(

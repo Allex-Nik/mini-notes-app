@@ -1,5 +1,7 @@
-package org.education
+package org.education.repository
 
+import org.education.Note
+import org.education.NoteListItem
 import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
 import java.time.Instant
@@ -7,11 +9,11 @@ import java.time.Instant
 // TODO: Use @CheckHQL and @NamedQuery for compile time query validation:
 //  see 1.6 in https://docs.hibernate.org/orm/7.2/introduction/html_single/#organizing-persistence
 // TODO: Create and inject a Queries repository (same link as above)
-class NoteRepositoryHibernateImpl {
+class NoteRepositoryHibernateImpl : NoteRepository {
     val sessionFactory = buildSessionFactory()
 
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
-    fun insertNote(title: String, text: String): Long =
+    override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->
             val note =
                 Note(creationDateTime = Instant.now(), lastEditedDateTime = Instant.now(), title = title, text = text)
@@ -19,7 +21,7 @@ class NoteRepositoryHibernateImpl {
             note.id ?: error("id was not generated")
         }
 
-    fun updateNote(id: Long, title: String, text: String) =
+    override fun updateNote(id: Long, title: String, text: String) =
         sessionFactory.inTransaction { session ->
             session.createMutationQuery("UPDATE Note SET lastEditedDateTime = :now, title = :title, text = :text WHERE id = :id")
                 .setParameter("now", Instant.now())
@@ -29,7 +31,7 @@ class NoteRepositoryHibernateImpl {
                 .executeUpdate()
         }
 
-    fun selectNote(id: Long): String =
+    override fun selectNote(id: Long): String =
         sessionFactory.fromTransaction { session ->
             session.createQuery("SELECT n.text FROM Note n WHERE n.id = :id", String::class.java)
                 .setParameter("id", id)
@@ -37,14 +39,14 @@ class NoteRepositoryHibernateImpl {
                 .orElse("")
         }
 
-    fun deleteNote(id: Long) =
-        sessionFactory.inTransaction { session ->
+    override fun deleteNote(id: Long): Int =
+        sessionFactory.fromTransaction { session ->
             session.createMutationQuery("DELETE FROM Note n WHERE n.id = :id")
                 .setParameter("id", id)
                 .executeUpdate()
         }
 
-    fun loadAllNotes(): List<NoteListItem> =
+    override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
                 "SELECT new org.education.NoteListItem(n.id, n.creationDateTime, n.lastEditedDateTime, n.title) FROM Note n",
