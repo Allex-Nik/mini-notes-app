@@ -8,7 +8,7 @@ import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
-class MainWindow(val noteRepository: NoteRepositoryHibernateImpl) : JFrame() { // BorderLayout by default
+class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by default
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
     private val removeButton = JButton(UIText.REMOVE_BUTTON_TITLE)
@@ -215,44 +215,17 @@ class MainWindow(val noteRepository: NoteRepositoryHibernateImpl) : JFrame() { /
     private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
 
     private fun saveNote() {
-        val note = textArea.text
-        val fileName = getNoteName()
+        val noteText = textArea.text
+        val noteHeader = header.text
 
-        val id = currentNoteId
-        currentNoteId = if (id == null) {
-            noteRepository.insertNote(fileName, note) // TODO: Don't work with DB on EDT
-        } else {
-            noteRepository.updateNote(id, fileName, note)
-            id
-        }
+        val noteName = noteService.getNoteName(noteHeader, noteText)
+        currentNoteId = noteService.saveNote(currentNoteId, noteName, noteText)
 
-        statusLabel.text = UIText.noteSaved(fileName)
+        statusLabel.text = UIText.noteSaved(noteName)
 
         readNotes()
         updateSavedNotesList()
         restoreSelection()
-    }
-
-    private fun getNoteName(): String {
-        var fileName = if (header.text != UIText.START_HEADER_TEXT && header.text.isNotEmpty()) {
-            header.text
-        } else {
-            // take the first word of the note, remove punctuation
-            val note = textArea.text
-            var fileName = note
-                .substringBefore(' ')
-                .trim { !it.isLetterOrDigit() }
-
-            // limit the word to 15 characters
-            if (fileName.length > 15) fileName = fileName.take(15)
-
-            if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
-
-            fileName
-        }
-
-        fileName += UIText.TXT_EXTENSION
-        return fileName
     }
 
     private fun restoreSelection() {
@@ -315,7 +288,7 @@ class MainWindow(val noteRepository: NoteRepositoryHibernateImpl) : JFrame() { /
 
     private fun removeNote() {
         val selectedNote = notesJList.selectedValue
-        noteRepository.deleteNote(selectedNote.id)
+        noteService.deleteNote(selectedNote.id)
         currentNoteId = null
         statusLabel.text = UIText.noteDeleted(selectedNote.title)
         textArea.text = ""
@@ -333,12 +306,12 @@ class MainWindow(val noteRepository: NoteRepositoryHibernateImpl) : JFrame() { /
         currentNoteId = selectedNote.id
         header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
 
-        textArea.text = noteRepository.selectNote(selectedNote.id)
+        textArea.text = noteService.selectNote(selectedNote.id)
     }
 
     private fun readNotes() {
         noteListItems.clear()
-        val loadedNotes = noteRepository.loadAllNotes()
+        val loadedNotes = noteService.loadAllNotes()
         noteListItems.addAll(loadedNotes)
     }
 
@@ -362,9 +335,10 @@ fun main() {
         description = "Notes App Database"
     }
     val noteRepository = NoteRepositoryHibernateImpl() // NoteRepository(ds)
+    val noteService = NoteService(noteRepository)
 
     SwingUtilities.invokeLater {
-        val frame = MainWindow(noteRepository) // dependency injection (DI)
+        val frame = MainWindow(noteService) // dependency injection (DI)
         frame.isVisible = true
     }
 }
