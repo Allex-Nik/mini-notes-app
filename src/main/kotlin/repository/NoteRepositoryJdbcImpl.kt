@@ -16,13 +16,13 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
 
     fun createNotesTableIfNotExists(): Boolean {
         val tableNotesSql =
-            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR(255), text TEXT);" // MEDIUMTEXT, LONGTEXT
+            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR(255), text TEXT, removed BIT(1) DEFAULT 0);" // MEDIUMTEXT, LONGTEXT
         return stmt.execute(tableNotesSql)
     }
 
     override fun insertNote(title: String, text: String) =
         conn.prepareStatement(
-            "INSERT INTO notes (creationDateTime, lastEditedDateTime, title, text) VALUES (?, ?, ?, ?);",
+            "INSERT INTO notes (creationDateTime, lastEditedDateTime, title, text, removed) VALUES (?, ?, ?, ?, ?);",
             Statement.RETURN_GENERATED_KEYS
         ).use { stmt ->
             val now = Timestamp.from(Instant.now())
@@ -30,6 +30,7 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
             stmt.setTimestamp(2, now)
             stmt.setString(3, title)
             stmt.setString(4, text)
+            stmt.setBoolean(5, false)
             stmt.executeUpdate()
             stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else throw Exception("Failed to insert a new note") }
         }
@@ -51,12 +52,12 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
         }
     }
 
-    override fun deleteNote(id: Long) = conn.prepareStatement("DELETE FROM notes WHERE id = ?").use { stmt ->
+    override fun deleteNote(id: Long) = conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
         stmt.setLong(1, id)
         stmt.executeUpdate()
     }
 
-    override fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes;").use { res ->
+    override fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false;").use { res ->
         val noteListItems = mutableListOf<NoteListItem>()
         while (res.next()) {
             noteListItems.add(
