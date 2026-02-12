@@ -16,5 +16,6 @@ data class Note (
     val creationDateTime: Instant?,
     val lastEditedDateTime: Instant?,
     val title: String,
-    val text: String
+    val text: String,
+    val removed: Boolean
 )
