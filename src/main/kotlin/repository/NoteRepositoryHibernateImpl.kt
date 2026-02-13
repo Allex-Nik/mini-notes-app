@@ -41,11 +41,12 @@ class NoteRepositoryHibernateImpl : NoteRepository {
 
     override fun deleteNote(id: Long): Int =
         sessionFactory.fromTransaction { session ->
-            session.createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
+            session.createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id") // TODO: provoke the problem: #rows != 1
                 .setParameter("id", id)
-                .executeUpdate()
+                .executeUpdate() // TODO: If #rows != 1, throw exception
         }
 
+    // TODO: Find annotation to replace recurring code with sessions and transactions
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
