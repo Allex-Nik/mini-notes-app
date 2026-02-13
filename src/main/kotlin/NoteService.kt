@@ -13,8 +13,8 @@ class NoteService(private val noteRepository: NoteRepository) {
                 .substringBefore(' ')
                 .trim { !it.isLetterOrDigit() }
 
-            // limit the word to 15 characters
-            if (fileName.length > 15) fileName = fileName.take(15)
+            // limit the word to the maximum allowed number of characters
+            if (fileName.length > MAX_CHARACTERS) fileName = fileName.take(MAX_CHARACTERS)
 
             if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
 
