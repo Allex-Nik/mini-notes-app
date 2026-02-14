@@ -9,8 +9,8 @@ import java.time.Instant
 // TODO: Use @CheckHQL and @NamedQuery for compile time query validation:
 //  see 1.6 in https://docs.hibernate.org/orm/7.2/introduction/html_single/#organizing-persistence
 // TODO: Create and inject a Queries repository (same link as above)
-class NoteRepositoryHibernateImpl : NoteRepository {
-    val sessionFactory = buildSessionFactory()
+class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
+    val sessionFactory = buildSessionFactory(configurationFile)
 
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
@@ -57,8 +57,8 @@ class NoteRepositoryHibernateImpl : NoteRepository {
         }
 }
 
-fun buildSessionFactory(): SessionFactory {
-    return Configuration().configure("hibernate/hibernate.cfg.xml").buildSessionFactory()
+fun buildSessionFactory(configurationFile: String): SessionFactory {
+    return Configuration().configure(configurationFile).buildSessionFactory()
     /**
      * Programmatic setup:
      * val sessionFactory = HibernatePersistenceConfiguration("notesapp")

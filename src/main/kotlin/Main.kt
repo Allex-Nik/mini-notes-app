@@ -335,7 +335,7 @@ fun main() {
         password = System.getenv("MYSQL_PASSWORD")
         description = "Notes App Database"
     }
-    val noteRepository = NoteRepositoryHibernateImpl() // NoteRepositoryJdbcImpl(ds)
+    val noteRepository = NoteRepositoryHibernateImpl("hibernate/hibernate.cfg.xml") // NoteRepositoryJdbcImpl(ds)
     val noteService = NoteService(noteRepository)
 
     SwingUtilities.invokeLater {
