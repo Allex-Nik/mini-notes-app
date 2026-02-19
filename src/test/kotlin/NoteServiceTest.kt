@@ -3,7 +3,6 @@ import org.education.MAX_CHARACTERS
 import org.education.NoteService
 import org.education.UIText.EMPTY_NOTE_TITLE
 import org.education.UIText.START_HEADER_TEXT
-import org.education.UIText.TXT_EXTENSION
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
