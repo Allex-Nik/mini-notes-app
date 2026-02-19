@@ -2,7 +2,6 @@ package org.education
 
 object UIText {
     const val EMPTY_NOTE_TITLE = "empty_note"
-    const val TXT_EXTENSION = ".txt"
 
     const val FRAME_TITLE = "Notes"
     const val SAVE_BUTTON_TITLE = "Save"

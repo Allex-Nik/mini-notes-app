@@ -16,7 +16,7 @@ class NoteServiceTest {
         val noteText = "Text"
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "Title$TXT_EXTENSION"
+        val expected = "Title"
 
         assertEquals(noteName, expected)
     }
@@ -27,7 +27,7 @@ class NoteServiceTest {
         val noteText = "Text"
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "Text$TXT_EXTENSION"
+        val expected = "Text"
 
         assertEquals(expected, noteName)
     }
@@ -38,7 +38,7 @@ class NoteServiceTest {
         val noteText = "Text"
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "Text$TXT_EXTENSION"
+        val expected = "Text"
 
         assertEquals(expected, noteName)
     }
@@ -49,7 +49,7 @@ class NoteServiceTest {
         val noteText = ""
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "$EMPTY_NOTE_TITLE$TXT_EXTENSION"
+        val expected = EMPTY_NOTE_TITLE
 
         assertEquals(expected, noteName)
     }
@@ -60,7 +60,7 @@ class NoteServiceTest {
         val noteText = "A".repeat(MAX_CHARACTERS + 5)
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "${"A".repeat(MAX_CHARACTERS)}$TXT_EXTENSION"
+        val expected = "A".repeat(MAX_CHARACTERS)
 
         assertEquals(expected, noteName)
     }

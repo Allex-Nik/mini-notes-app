@@ -20,8 +20,6 @@ class NoteService(private val noteRepository: NoteRepository) {
 
             fileName
         }
-
-        fileName += UIText.TXT_EXTENSION
         return fileName
     }
 

@@ -305,7 +305,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         if (notesJList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = notesJList.selectedValue
         currentNoteId = selectedNote.id
-        header.text = selectedNote.title.removeSuffix(UIText.TXT_EXTENSION)
+        header.text = selectedNote.title
 
         textArea.text = noteService.selectNote(selectedNote.id)
     }
