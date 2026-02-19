@@ -6,6 +6,7 @@ import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
 import javax.swing.*
+import javax.swing.JOptionPane.ERROR_MESSAGE
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
@@ -219,14 +220,17 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         val noteText = textArea.text
         val noteHeader = header.text
 
-        val noteName = noteService.getNoteName(noteHeader, noteText)
-        currentNoteId = noteService.saveNote(currentNoteId, noteName, noteText)
+        try {
+            val noteName = noteService.getNoteName(noteHeader, noteText)
+            currentNoteId = noteService.saveNote(currentNoteId, noteName, noteText)
+            statusLabel.text = UIText.noteSaved(noteName)
 
-        statusLabel.text = UIText.noteSaved(noteName)
-
-        readNotes()
-        updateSavedNotesList()
-        restoreSelection()
+            readNotes()
+            updateSavedNotesList()
+            restoreSelection()
+        } catch (ex: HeaderTooLongException) {
+            notifyAboutLongHeader(ex.message)
+        }
     }
 
     private fun restoreSelection() {
@@ -270,6 +274,15 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
             JOptionPane.YES_NO_OPTION
         )
         return choice == JOptionPane.YES_OPTION || (choice == JOptionPane.CLOSED_OPTION)
+    }
+
+    private fun notifyAboutLongHeader(message: String) {
+        JOptionPane.showMessageDialog(
+            this,
+            message,
+            UIText.HEADER_ERROR_TITLE,
+            ERROR_MESSAGE
+        )
     }
 
     private fun addLoadButtonListener() = loadButton.addActionListener {

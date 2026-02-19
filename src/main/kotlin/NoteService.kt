@@ -4,7 +4,10 @@ import org.education.repository.NoteRepository
 
 class NoteService(private val noteRepository: NoteRepository) {
     fun getNoteName(header: String, text: String): String {
-        var fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
+        if (header.length > MAX_CHARACTERS)
+            throw HeaderTooLongException("Header length must not be greater than $MAX_CHARACTERS characters")
+
+        val fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
             header
         } else {
             // take the first word of the note, remove punctuation
@@ -24,6 +27,9 @@ class NoteService(private val noteRepository: NoteRepository) {
     }
 
     fun saveNote(id: Long?, noteName: String, text: String): Long {
+        if (noteName.length > MAX_CHARACTERS)
+            throw HeaderTooLongException("Note name length must not be greater than $MAX_CHARACTERS characters")
+
         return if (id == null) {
             noteRepository.insertNote(noteName, text) // TODO: Don't work with DB on EDT
         } else {

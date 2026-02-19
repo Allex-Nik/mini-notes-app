@@ -20,6 +20,7 @@ object UIText {
     const val CONFIRM_SAVE_NOTE_TITLE = "Save Note"
     const val EXIT_TITLE = "Exit"
     const val SAVE_TITLE = "Save"
+    const val HEADER_ERROR_TITLE = "Too long header error"
     const val NEW_NOTE_TITLE = "New"
     const val START_HEADER_TEXT = "Add your header here"
 

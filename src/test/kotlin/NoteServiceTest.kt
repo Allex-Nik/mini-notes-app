@@ -1,3 +1,4 @@
+import org.education.HeaderTooLongException
 import org.education.MAX_CHARACTERS
 import org.education.NoteService
 import org.education.UIText.EMPTY_NOTE_TITLE
@@ -5,7 +6,9 @@ import org.education.UIText.START_HEADER_TEXT
 import org.education.UIText.TXT_EXTENSION
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
+// TODO: validate header length at all levels: UI, backend, DB
 class NoteServiceTest {
     val noteRepository = NoteRepositoryMock()
     val noteService = NoteService(noteRepository)
@@ -55,7 +58,7 @@ class NoteServiceTest {
     }
 
     @Test
-    fun `getNoteName with long header`() {
+    fun `getNoteName truncates long note name from first word (header is empty)`() {
         val header = ""
         val noteText = "A".repeat(MAX_CHARACTERS + 5)
 
@@ -66,7 +69,27 @@ class NoteServiceTest {
     }
 
     @Test
-    fun `saveNote creating note`() {
+    fun `getNoteName truncates long note name from first word (header is default)`() {
+        val header = START_HEADER_TEXT
+        val noteText = "A".repeat(MAX_CHARACTERS + 5)
+
+        val noteName = noteService.getNoteName(header, noteText)
+        val expected = "A".repeat(MAX_CHARACTERS)
+
+        assertEquals(expected, noteName)
+    }
+
+    @Test
+    fun `getNoteName with long header`() {
+        val header = "A".repeat(MAX_CHARACTERS + 5)
+        val noteText = "Text"
+
+        assertThrows<HeaderTooLongException> { noteService.getNoteName(header, noteText) }
+    }
+
+    // TODO: Validate that note name is not empty: exception. Add test for that. Make custom Exception: EmptyNoteName
+    @Test
+    fun `create note`() {
         val noteId = null
         val noteName = "Title"
         val noteText = "Text"
@@ -87,16 +110,43 @@ class NoteServiceTest {
     }
 
     @Test
-    fun `saveNote updating note`() {
+    fun `create note with long name`() {
+        val noteId = null
+        val noteName = "A".repeat(MAX_CHARACTERS + 5)
+        val noteText = "Text"
+        val repoSizeBefore = noteRepository.size()
+
+        assertThrows<HeaderTooLongException> { noteService.saveNote(noteId, noteName, noteText) }
+
+        val repoSizeAfter = noteRepository.size()
+        assertEquals(repoSizeBefore, repoSizeAfter)
+    }
+
+    // TODO: Update note with empty name
+    @Test
+    fun `update note`() {
         val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
 
+        val repoSizeBeforeUpdate = noteRepository.size()
         val updatedNoteId = noteService.saveNote(noteToUpdateId, "New title", "New text")
+
+        val repoSizeAfterUpdate = noteRepository.size()
         val updatedNoteText = noteRepository.selectNote(updatedNoteId)
         val updatedNote = noteRepository.loadAllNotes().find { it.id == updatedNoteId }
             ?: error("Note with id=$updatedNoteId not found")
 
+        assertEquals(repoSizeBeforeUpdate, repoSizeAfterUpdate)
         assertEquals(noteToUpdateId, updatedNoteId)
         assertEquals("New text", updatedNoteText)
         assertEquals("New title", updatedNote.title)
+    }
+
+    @Test
+    fun `update note with long name`() {
+        val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
+        val noteName = "A".repeat(MAX_CHARACTERS + 5)
+        val noteText = "Text"
+
+        assertThrows<HeaderTooLongException> { noteService.saveNote(noteToUpdateId, noteName, noteText) }
     }
 }
