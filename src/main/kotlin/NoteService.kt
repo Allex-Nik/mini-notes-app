@@ -3,6 +3,20 @@ package org.education
 import org.education.repository.NoteRepository
 
 class NoteService(private val noteRepository: NoteRepository) {
+    /**
+     * Given the [header] and the [text] of the note, computes the name of the note.
+     * If the [header] is not default and not empty, the name of the note is the [header].
+     * Otherwise, the name of the note is the first [MAX_CHARACTERS] characters of the first word in the note.
+     * If the [text] of the note is empty (and the [header] is empty or default),
+     * the note is called [UIText.EMPTY_NOTE_TITLE].
+     *
+     * @param header header of the note.
+     * @param text text of the note.
+     *
+     * @throws HeaderTooLongException if the [header] of the note is larger than [MAX_CHARACTERS].
+     *
+     * @return the name of the note.
+     */
     fun getNoteName(header: String, text: String): String {
         if (header.length > MAX_CHARACTERS)
             throw HeaderTooLongException("Header length must not be greater than $MAX_CHARACTERS characters")
@@ -26,6 +40,18 @@ class NoteService(private val noteRepository: NoteRepository) {
         return fileName
     }
 
+    /**
+     * Updates an existing note with a new [name][noteName] or [text] if the [id] of the note is provided.
+     * Creates a new note if the provided [id] is null.
+     *
+     * @param id id of the note.
+     * @param noteName name of the note.
+     * @param text text of the note.
+     *
+     * @throws HeaderTooLongException if the name of the note is larger than [MAX_CHARACTERS].
+     *
+     * @return the [id] of the created or updated note.
+     */
     fun saveNote(id: Long?, noteName: String, text: String): Long {
         if (noteName.length > MAX_CHARACTERS)
             throw HeaderTooLongException("Note name length must not be greater than $MAX_CHARACTERS characters")
