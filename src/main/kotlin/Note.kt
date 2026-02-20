@@ -1,5 +1,6 @@
 package org.education
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -23,6 +24,7 @@ data class Note (
      */
     @field:Length(max = MAX_CHARACTERS)
     val title: String,
+    @Column(columnDefinition = "TEXT")
     val text: String,
     val removed: Boolean
 )
