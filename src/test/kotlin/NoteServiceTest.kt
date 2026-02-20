@@ -1,3 +1,4 @@
+import org.education.BlankNoteNameException
 import org.education.HeaderTooLongException
 import org.education.MAX_CHARACTERS
 import org.education.NoteService
@@ -7,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-// TODO: validate header length at all levels: UI, backend, DB
 class NoteServiceTest {
     val noteRepository = NoteRepositoryMock()
     val noteService = NoteService(noteRepository)
@@ -86,7 +86,6 @@ class NoteServiceTest {
         assertThrows<HeaderTooLongException> { noteService.getNoteName(header, noteText) }
     }
 
-    // TODO: Validate that note name is not empty: exception. Add test for that. Make custom Exception: EmptyNoteName
     @Test
     fun `create note`() {
         val noteId = null
@@ -121,7 +120,30 @@ class NoteServiceTest {
         assertEquals(repoSizeBefore, repoSizeAfter)
     }
 
-    // TODO: Update note with empty name
+    @Test
+    fun `create note with empty name`() {
+        val noteId = null
+        val noteName = ""
+        val noteText = "Text"
+
+        val repoSizeBefore = noteRepository.size()
+        assertThrows<BlankNoteNameException> { noteService.saveNote(noteId, noteName, noteText) }
+        val repoSizeAfter = noteRepository.size()
+        assertEquals(repoSizeBefore, repoSizeAfter)
+    }
+
+    @Test
+    fun `create note with whitespace name`() {
+        val noteId = null
+        val noteName = " "
+        val noteText = "Text"
+
+        val repoSizeBefore = noteRepository.size()
+        assertThrows<BlankNoteNameException> { noteService.saveNote(noteId, noteName, noteText) }
+        val repoSizeAfter = noteRepository.size()
+        assertEquals(repoSizeBefore, repoSizeAfter)
+    }
+
     @Test
     fun `update note`() {
         val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
@@ -147,5 +169,23 @@ class NoteServiceTest {
         val noteText = "Text"
 
         assertThrows<HeaderTooLongException> { noteService.saveNote(noteToUpdateId, noteName, noteText) }
+    }
+
+    @Test
+    fun `update note with empty name`() {
+        val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
+        val noteName = ""
+        val noteText = "Text"
+
+        assertThrows<BlankNoteNameException> { noteService.saveNote(noteToUpdateId, noteName, noteText) }
+    }
+
+    @Test
+    fun `update note with whitespace name`() {
+        val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
+        val noteName = " "
+        val noteText = "Text"
+
+        assertThrows<BlankNoteNameException> { noteService.saveNote(noteToUpdateId, noteName, noteText) }
     }
 }

@@ -55,6 +55,7 @@ class NoteService(private val noteRepository: NoteRepository) {
     fun saveNote(id: Long?, noteName: String, text: String): Long {
         if (noteName.length > MAX_CHARACTERS)
             throw HeaderTooLongException("Note name length must not be greater than $MAX_CHARACTERS characters")
+        if (noteName.isBlank()) throw BlankNoteNameException("Note name must not be blank")
 
         return if (id == null) {
             noteRepository.insertNote(noteName, text) // TODO: Don't work with DB on EDT
