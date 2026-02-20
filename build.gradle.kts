@@ -12,6 +12,8 @@ repositories {
 dependencies {
     implementation("com.mysql:mysql-connector-j:9.5.0")
     implementation("org.hibernate:hibernate-core:7.2.2.Final")
+    implementation("org.hibernate.validator:hibernate-validator:9.1.0.Final")
+    implementation("org.glassfish.expressly:expressly:6.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
     testImplementation(platform("org.junit:junit-bom:6.0.2"))
