@@ -3,6 +3,12 @@ package org.education.ui
 import org.education.exceptions.HeaderTooLongException
 import org.education.model.NoteListItem
 import org.education.service.NoteService
+import org.education.ui.UIText.CONFIRM_DELETE_MESSAGE
+import org.education.ui.UIText.CONFIRM_DELETE_NOTE_TITLE
+import org.education.ui.UIText.CONFIRM_EXIT_MESSAGE
+import org.education.ui.UIText.CONFIRM_SAVE_MESSAGE
+import org.education.ui.UIText.CONFIRM_SAVE_NOTE_TITLE
+import org.education.ui.UIText.EXIT_TITLE
 import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
@@ -188,7 +194,9 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
 
             addActionListener {
                 // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
-                if (autosaveCheckbox.isSelected || confirmedSaveNote()) saveNote()
+                if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                    saveNote()
+                }
                 currentNoteId = null
                 header.text = UIText.START_HEADER_TEXT
                 textArea.text = ""
@@ -202,15 +210,17 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
         val saveNoteItem = JMenuItem(UIText.SAVE_TITLE, ImageIcon(saveNotePic))
         saveNoteItem.accelerator = saveShortcut
-        saveNoteItem.addActionListener { if (confirmedSaveNote()) saveNote() }
+        saveNoteItem.addActionListener {
+            if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) saveNote()
+        }
 
         // exit menu item
         val exitPic = ImageIcon(this.javaClass.getResource(Icons.EXIT_ICON))
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
-        val exitItem = JMenuItem(UIText.EXIT_TITLE, ImageIcon(exitPic))
+        val exitItem = JMenuItem(EXIT_TITLE, ImageIcon(exitPic))
         exitItem.accelerator = exitShortcut
         exitItem.addActionListener {
-            if (!confirmedExit()) return@addActionListener
+            if (!confirmedAction(CONFIRM_EXIT_MESSAGE, EXIT_TITLE)) return@addActionListener
             if (autosaveCheckbox.isSelected) saveNote()
             exitProcess(0)
         }
@@ -233,7 +243,9 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         addNotesSelectionListener()
     }
 
-    private fun addSaveButtonListener() = saveButton.addActionListener { if (confirmedSaveNote()) saveNote() }
+    private fun addSaveButtonListener() = saveButton.addActionListener {
+        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) saveNote()
+    }
 
     private fun saveNote() {
         val noteText = textArea.text
@@ -264,35 +276,14 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         }
     }
 
-    // TODO: Unify the "confirm" methods
-    private fun confirmedSaveNote(): Boolean {
+    private fun confirmedAction(message: String, title: String): Boolean {
         val choice = JOptionPane.showConfirmDialog(
             this,
-            UIText.CONFIRM_SAVE_MESSAGE,
-            UIText.CONFIRM_SAVE_NOTE_TITLE,
+            message,
+            title,
             JOptionPane.YES_NO_OPTION
         )
         return choice == JOptionPane.YES_OPTION
-    }
-
-    private fun confirmedDeleteNote(): Boolean {
-        val choice = JOptionPane.showConfirmDialog(
-            this,
-            UIText.CONFIRM_DELETE_MESSAGE,
-            UIText.CONFIRM_DELETE_NOTE_TITLE,
-            JOptionPane.YES_NO_OPTION
-        )
-        return choice == JOptionPane.YES_OPTION
-    }
-
-    private fun confirmedExit(): Boolean {
-        val choice = JOptionPane.showConfirmDialog(
-            this,
-            UIText.CONFIRM_EXIT_MESSAGE,
-            UIText.EXIT_TITLE,
-            JOptionPane.YES_NO_OPTION
-        )
-        return choice == JOptionPane.YES_OPTION || (choice == JOptionPane.CLOSED_OPTION)
     }
 
     private fun notifyAboutLongHeader(message: String) {
@@ -316,7 +307,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
 
     private fun addRemoveButtonListener() = removeButton.addActionListener {
         if (notesJList.isSelectionEmpty) return@addActionListener
-        if (confirmedDeleteNote()) removeNote()
+        if (confirmedAction(CONFIRM_DELETE_MESSAGE, CONFIRM_DELETE_NOTE_TITLE)) removeNote()
     }
 
     private fun removeNote() {
