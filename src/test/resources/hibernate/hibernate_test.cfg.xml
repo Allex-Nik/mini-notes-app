@@ -27,6 +27,6 @@
         <property name="hibernate.format_sql">true</property>
 
         <!-- Mappings -->
-        <mapping class="org.education.Note"/>
+        <mapping class="org.education.model.Note"/>
     </session-factory>
 </hibernate-configuration>
