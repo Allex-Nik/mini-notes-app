@@ -1,6 +1,11 @@
-package org.education
+package org.education.service
 
+import org.education.ui.MAX_CHARACTERS
+import org.education.exceptions.BlankNoteNameException
+import org.education.exceptions.HeaderTooLongException
+import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
+import org.education.ui.UIText
 
 class NoteService(private val noteRepository: NoteRepository) {
     /**

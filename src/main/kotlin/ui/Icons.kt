@@ -1,4 +1,4 @@
-package org.education
+package org.education.ui
 
 object Icons {
     const val APP_ICON = "/app-icon.png"

@@ -1,5 +1,7 @@
+package repository
+
 import jakarta.validation.ConstraintViolationException
-import org.education.MAX_CHARACTERS
+import org.education.ui.MAX_CHARACTERS
 import org.education.repository.NoteRepositoryHibernateImpl
 import org.hibernate.exception.DataException
 import org.junit.jupiter.api.*

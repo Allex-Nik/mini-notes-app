@@ -1,4 +1,4 @@
-package org.education
+package org.education.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.education.ui.MAX_CHARACTERS
 import org.hibernate.validator.constraints.Length
 import java.time.Instant
 

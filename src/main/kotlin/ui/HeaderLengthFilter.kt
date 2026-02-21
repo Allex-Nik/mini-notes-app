@@ -1,4 +1,4 @@
-package org.education
+package org.education.ui
 
 import java.awt.Toolkit
 import javax.swing.text.AttributeSet

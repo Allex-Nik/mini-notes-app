@@ -1,4 +1,4 @@
-package org.education
+package org.education.model
 
 import java.time.Instant
 

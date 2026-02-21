@@ -1,4 +1,4 @@
-package org.education
+package org.education.ui
 
 object UIText {
     const val EMPTY_NOTE_TITLE = "empty_note"

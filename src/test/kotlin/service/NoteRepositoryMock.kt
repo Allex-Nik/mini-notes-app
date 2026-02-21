@@ -1,5 +1,7 @@
-import org.education.Note
-import org.education.NoteListItem
+package service
+
+import org.education.model.Note
+import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
 import java.time.Instant
 

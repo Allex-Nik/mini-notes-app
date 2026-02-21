@@ -1,6 +1,8 @@
+package repository
+
 import com.mysql.cj.jdbc.MysqlDataSource
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation
-import org.education.MAX_CHARACTERS
+import org.education.ui.MAX_CHARACTERS
 import org.education.repository.NoteRepositoryJdbcImpl
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach

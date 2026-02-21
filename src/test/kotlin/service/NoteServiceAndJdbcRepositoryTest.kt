@@ -1,6 +1,8 @@
+package service
+
 import com.mysql.cj.jdbc.MysqlDataSource
-import org.education.Note
-import org.education.NoteService
+import org.education.model.Note
+import org.education.service.NoteService
 import org.education.repository.NoteRepositoryJdbcImpl
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals

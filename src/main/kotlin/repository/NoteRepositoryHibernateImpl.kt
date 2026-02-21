@@ -1,7 +1,7 @@
 package org.education.repository
 
-import org.education.Note
-import org.education.NoteListItem
+import org.education.model.Note
+import org.education.model.NoteListItem
 import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
 import java.time.Instant
@@ -50,7 +50,7 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.NoteListItem(n.id, n.creationDateTime, n.lastEditedDateTime, n.title) FROM Note n WHERE n.removed = false",
+                "SELECT new org.education.model.NoteListItem(n.id, n.creationDateTime, n.lastEditedDateTime, n.title) FROM Note n WHERE n.removed = false",
                 NoteListItem::class.java
             )
                 .resultList

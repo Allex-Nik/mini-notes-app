@@ -1,4 +1,6 @@
-import org.education.NoteService
+package service
+
+import org.education.service.NoteService
 import org.education.repository.NoteRepository
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals

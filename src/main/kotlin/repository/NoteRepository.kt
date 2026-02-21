@@ -1,6 +1,6 @@
 package org.education.repository
 
-import org.education.NoteListItem
+import org.education.model.NoteListItem
 
 interface NoteRepository {
     fun insertNote(title: String, text: String): Long

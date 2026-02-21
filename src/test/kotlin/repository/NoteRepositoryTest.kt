@@ -1,3 +1,5 @@
+package repository
+
 import org.education.repository.NoteRepository
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
