@@ -6,6 +6,7 @@ import org.education.service.NoteService
 import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
+import java.awt.event.KeyEvent
 import javax.swing.ImageIcon
 import javax.swing.JButton
 import javax.swing.JCheckBox
@@ -44,6 +45,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
     private val autosaveCheckbox = JCheckBox(UIText.AUTOSAVE_CHECKBOX_TITLE, false)
     private val saveShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.SAVE_SHORTCUT)
     private val newNoteShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.NEW_NOTE_SHORTCUT)
+    private val exitShortcut: KeyStroke? = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)
     private val statusLabel = JLabel(UIText.READY_LABEL)
         .apply { border = Theme.statusPadding }
     private var currentNoteId: Long? = null
@@ -205,7 +207,8 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         // exit menu item
         val exitPic = ImageIcon(this.javaClass.getResource(Icons.EXIT_ICON))
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
-        val exitItem = JMenuItem(UIText.EXIT_TITLE, ImageIcon(exitPic)) // TODO: Add a shortcut
+        val exitItem = JMenuItem(UIText.EXIT_TITLE, ImageIcon(exitPic))
+        exitItem.accelerator = exitShortcut
         exitItem.addActionListener {
             if (!confirmedExit()) return@addActionListener
             if (autosaveCheckbox.isSelected) saveNote()
