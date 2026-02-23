@@ -6,9 +6,6 @@ import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
 import java.time.Instant
 
-// TODO: Use @CheckHQL and @NamedQuery for compile time query validation:
-//  see 1.6 in https://docs.hibernate.org/orm/7.2/introduction/html_single/#organizing-persistence
-// TODO: Create and inject a Queries repository (same link as above)
 class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
     val sessionFactory = buildSessionFactory(configurationFile)
 
@@ -39,11 +36,16 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
                 .orElse("")
         }
 
+    // If an exception is triggered inside a transaction, the transaction is rolled back
     override fun deleteNote(id: Long): Int =
         sessionFactory.fromTransaction { session ->
-            session.createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id") // TODO: provoke the problem: #rows != 1
+            val affectedInstances = session
+                .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
                 .setParameter("id", id)
-                .executeUpdate() // TODO: If #rows != 1, throw exception
+                .executeUpdate()
+            if (affectedInstances == 0) error("The note was not deleted")
+            if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
+            affectedInstances
         }
 
     // TODO: Find annotation to replace recurring code with sessions and transactions
@@ -57,15 +59,5 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
         }
 }
 
-fun buildSessionFactory(configurationFile: String): SessionFactory {
-    return Configuration().configure(configurationFile).buildSessionFactory()
-    /**
-     * Programmatic setup:
-     * val sessionFactory = HibernatePersistenceConfiguration("notesapp")
-     *         .managedClass(Note::class.java)
-     *         .jdbcUrl("jdbc:mysql://localhost:3306/notesapp")
-     *         .jdbcCredentials("root", "password")
-     *         .showSql(true, true, true)
-     *         .createEntityManagerFactory()
-     */
-}
+fun buildSessionFactory(configurationFile: String): SessionFactory =
+    Configuration().configure(configurationFile).buildSessionFactory()
