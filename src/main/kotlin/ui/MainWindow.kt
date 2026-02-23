@@ -13,6 +13,7 @@ import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
 import java.awt.event.KeyEvent
+import javax.swing.DefaultListModel
 import javax.swing.ImageIcon
 import javax.swing.JButton
 import javax.swing.JCheckBox
@@ -33,27 +34,37 @@ import javax.swing.SwingConstants
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
-class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by default
+class MainWindow(val noteService: NoteService) : JFrame() {
+    // buttons and checkbox
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)
     private val removeButton = JButton(UIText.REMOVE_BUTTON_TITLE)
-    private val leftPanel = JPanel() // FlowLayout by default
+    private val autosaveCheckbox = JCheckBox(UIText.AUTOSAVE_CHECKBOX_TITLE, false)
+
+    // panels and pane
+    private val leftPanel = JPanel()
     private val centralPanel = JPanel().apply { layout = BorderLayout() }
-    private val header = JTextField(UIText.START_HEADER_TEXT)
-    private val textArea = JTextArea()
-    private val noteListItems = mutableListOf<NoteListItem>()
-    private val notesPanel = JPanel() // FlowLayout by default
-    private var notesJList =
-        JList(noteListItems.toTypedArray()) // TODO: Try DefaultListModel to avoid using setListData
+    private val notesPanel = JPanel()
+    private lateinit var savedNotesScrollPane: JScrollPane
+
+    // labels
     private val savedNotesLabel = JLabel(UIText.SAVED_NOTES_LABEL, SwingConstants.CENTER)
         .apply { font = Theme.savedNotesLabelFont }
-    private lateinit var savedNotesScrollPane: JScrollPane
-    private val autosaveCheckbox = JCheckBox(UIText.AUTOSAVE_CHECKBOX_TITLE, false)
+    private val statusLabel = JLabel(UIText.READY_LABEL)
+        .apply { border = Theme.statusPadding }
+
+    // shortcuts
     private val saveShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.SAVE_SHORTCUT)
     private val newNoteShortcut: KeyStroke? = KeyStroke.getKeyStroke(UIText.NEW_NOTE_SHORTCUT)
     private val exitShortcut: KeyStroke? = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)
-    private val statusLabel = JLabel(UIText.READY_LABEL)
-        .apply { border = Theme.statusPadding }
+
+    // list of notes
+    private val listModel = DefaultListModel<NoteListItem>()
+    private var notesJList = JList(listModel)
+
+    // current note
+    private val header = JTextField(UIText.START_HEADER_TEXT)
+    private val textArea = JTextArea()
     private var currentNoteId: Long? = null
 
     init {
@@ -144,8 +155,11 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
             font = Theme.savedNotesListFont
         }
 
+        savedNotesScrollPane = JScrollPane(notesJList)
+        notesPanel.add(savedNotesLabel, BorderLayout.NORTH)
+        notesPanel.add(savedNotesScrollPane, BorderLayout.CENTER)
+
         readNotes()
-        updateSavedNotesList()
 
         leftPanel.add(notesPanel, BorderLayout.CENTER)
     }
@@ -153,7 +167,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
     private fun configureTextArea() {
         textArea.apply {
             background = Theme.textAreaColor
-            // ctrl N - in JTextArea is going to the next line
+            // ctrl N - in JTextArea denotes moving to the next line
             // cancel the default behavior for JTextArea when it is in focus
             getInputMap(JComponent.WHEN_FOCUSED).put(newNoteShortcut, "none")
             lineWrap = true
@@ -193,7 +207,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
             icon = ImageIcon(newNoteImageScaled)
 
             addActionListener {
-                // if the checkbox is selected, the confirmedSaveNote() is not evaluated and the dialog is not shown
+                // if the checkbox is selected, the confirmedAction() is not evaluated and the dialog is not shown
                 if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
                     saveNote()
                 }
@@ -211,7 +225,10 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         val saveNoteItem = JMenuItem(UIText.SAVE_TITLE, ImageIcon(saveNotePic))
         saveNoteItem.accelerator = saveShortcut
         saveNoteItem.addActionListener {
-            if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) saveNote()
+            if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                saveNote()
+                restoreSelection()
+            }
         }
 
         // exit menu item
@@ -244,7 +261,10 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
     }
 
     private fun addSaveButtonListener() = saveButton.addActionListener {
-        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) saveNote()
+        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+            saveNote()
+            restoreSelection()
+        }
     }
 
     private fun saveNote() {
@@ -257,8 +277,6 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
             statusLabel.text = UIText.noteSaved(noteName)
 
             readNotes()
-            updateSavedNotesList()
-            restoreSelection()
         } catch (ex: HeaderTooLongException) {
             notifyAboutLongHeader(ex.message)
         }
@@ -266,11 +284,11 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
 
     private fun restoreSelection() {
         val id = currentNoteId ?: return
-        val noteIndexToSelect = noteListItems.indexOfFirst { it.id == id }
+        val noteIndexToSelect = (0 until listModel.size).indexOfFirst { listModel[it].id == id }
         if (noteIndexToSelect >= 0) {
             notesJList.selectedIndex = noteIndexToSelect
             notesJList.ensureIndexIsVisible(noteIndexToSelect)
-        } else { // do we need this branch?
+        } else {
             currentNoteId = null
             notesJList.clearSelection()
         }
@@ -297,10 +315,7 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
 
     private fun addLoadButtonListener() = loadButton.addActionListener {
         readNotes()
-        updateSavedNotesList()
-        // if currentNoteId != null, selection restored. if it is null, this step is skipped.
-        // TODO: Keep an eye on synchronization between currentNoteId and savedNotesList.selectedValue.id.
-        //  Consider currentNoteId = savedNotesList.selectedValue?.id
+        // if currentNoteId != null, selection restored. If it is null, this step is skipped.
         restoreSelection()
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
     }
@@ -318,34 +333,30 @@ class MainWindow(val noteService: NoteService) : JFrame() { // BorderLayout by d
         textArea.text = ""
         header.text = UIText.START_HEADER_TEXT
         readNotes() // heavy operation, better to avoid
-        updateSavedNotesList()
     }
 
-    // TODO: When add some text and then select another note, autosave if the checkbox is checked, ask about saving otherwise
     private fun addNotesSelectionListener() = notesJList.addListSelectionListener {
-        // setListData in updateSavedNotesList removes selection and triggers this listener
-        // which leads to savedNotesList.selectedValue == null and thus an exception
         if (notesJList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = notesJList.selectedValue
+        if (textArea.text.isNotEmpty()) {
+            if (currentNoteId == null ||
+                textArea.text != noteService.selectNote(currentNoteId!!) ||
+                header.text != noteService.loadAllNotes().find { it.id == currentNoteId }?.title) {
+                if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                    saveNote()
+                }
+            }
+        }
+
         currentNoteId = selectedNote.id
         header.text = selectedNote.title
-
         textArea.text = noteService.selectNote(selectedNote.id)
+        restoreSelection()
     }
 
     private fun readNotes() {
-        noteListItems.clear()
+        listModel.clear()
         val loadedNotes = noteService.loadAllNotes()
-        noteListItems.addAll(loadedNotes)
-    }
-
-    private fun updateSavedNotesList() {
-        notesPanel.removeAll() // change only notes we need
-        notesPanel.add(savedNotesLabel, BorderLayout.NORTH)
-        notesJList.setListData(noteListItems.toTypedArray())
-        savedNotesScrollPane = JScrollPane(notesJList)
-        notesPanel.add(savedNotesScrollPane, BorderLayout.CENTER)
-        notesPanel.revalidate()
-        notesPanel.repaint()
+        loadedNotes.forEach { listModel.addElement(it) }
     }
 }
