@@ -9,6 +9,9 @@ import java.time.Instant
 class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
     val sessionFactory = buildSessionFactory(configurationFile)
 
+    // done by Hibernate automatically
+    override fun createNotesTableIfNotExists() {}
+
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->

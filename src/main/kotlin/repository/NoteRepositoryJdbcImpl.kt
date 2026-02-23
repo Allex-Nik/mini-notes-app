@@ -15,10 +15,10 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
 
     fun dropNotesTable() = stmt.execute("DROP TABLE IF EXISTS notes;")
 
-    fun createNotesTableIfNotExists(): Boolean {
+    override fun createNotesTableIfNotExists() {
         val tableNotesSql =
             "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR($MAX_CHARACTERS), text TEXT, removed BIT(1) DEFAULT 0);"
-        return stmt.execute(tableNotesSql)
+        stmt.execute(tableNotesSql)
     }
 
     override fun insertNote(title: String, text: String) =

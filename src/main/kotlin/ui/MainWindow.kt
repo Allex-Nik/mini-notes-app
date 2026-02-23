@@ -52,8 +52,7 @@ class MainWindow(val noteService: NoteService) : JFrame() {
     private var isAdjustingSelection = false
 
     init {
-//        noteRepository.dropNotesTable() // left for development
-//        noteRepository.createNotesTableIfNotExists()
+        noteService.createNotesTableIfNotExists()
         configureFrame()
         configureLeftPanel()
         configureTextArea()

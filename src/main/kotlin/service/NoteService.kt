@@ -8,6 +8,8 @@ import org.education.repository.NoteRepository
 import org.education.ui.UIText
 
 class NoteService(private val noteRepository: NoteRepository) {
+    fun createNotesTableIfNotExists() = noteRepository.createNotesTableIfNotExists()
+
     /**
      * Given the [header] and the [text] of the note, computes the name of the note.
      * If the [header] is not default and not empty, the name of the note is the [header].
