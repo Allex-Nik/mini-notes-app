@@ -18,11 +18,6 @@ data class Note (
     val id: Long? = null,
     val creationDateTime: Instant?,
     val lastEditedDateTime: Instant?,
-    /**
-     * Makes the type of the field varchar(60). Therefore, if we do it here, the constraint also works in JDBC.
-     * If the database already has rows violating this constraint, the type does not change,
-     * But the constraint is still enforced.
-     */
     @field:Length(max = MAX_CHARACTERS)
     val title: String,
     @Column(columnDefinition = "TEXT")

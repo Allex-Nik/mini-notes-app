@@ -32,8 +32,6 @@ class NoteServiceAndJdbcRepositoryTest : NoteServiceAndRepositoryTest() {
         noteRepository.conn.close()
     }
 
-    // if selectNote() is wrong, this test will not fail, but `createNote alternative`() might fail
-    // if createNote() is wrong, all the tests in this class might fail
     @Test
     fun createNote() {
         val id = noteService.saveNote(null, "Test note", "Test text")

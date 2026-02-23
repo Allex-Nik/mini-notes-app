@@ -63,7 +63,7 @@ class NoteService(private val noteRepository: NoteRepository) {
         if (noteName.isBlank()) throw BlankNoteNameException("Note name must not be blank")
 
         return if (id == null) {
-            noteRepository.insertNote(noteName, text) // TODO: Don't work with DB on EDT
+            noteRepository.insertNote(noteName, text)
         } else {
             noteRepository.updateNote(id, noteName, text)
             id

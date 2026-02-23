@@ -12,15 +12,22 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->
-            val note =
-                Note(creationDateTime = Instant.now(), lastEditedDateTime = Instant.now(), title = title, text = text, removed = false)
+            val note = Note(
+                creationDateTime = Instant.now(),
+                lastEditedDateTime = Instant.now(),
+                title = title,
+                text = text,
+                removed = false
+            )
             session.persist(note)
             note.id ?: error("id was not generated")
         }
 
     override fun updateNote(id: Long, title: String, text: String) =
         sessionFactory.inTransaction { session ->
-            session.createMutationQuery("UPDATE Note SET lastEditedDateTime = :now, title = :title, text = :text WHERE id = :id")
+            session.createMutationQuery(
+                "UPDATE Note SET lastEditedDateTime = :now, title = :title, text = :text WHERE id = :id"
+            )
                 .setParameter("now", Instant.now())
                 .setParameter("title", title)
                 .setParameter("text", text)
@@ -30,7 +37,10 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
 
     override fun selectNote(id: Long): String =
         sessionFactory.fromTransaction { session ->
-            session.createQuery("SELECT n.text FROM Note n WHERE n.id = :id", String::class.java)
+            session.createQuery(
+                "SELECT n.text FROM Note n WHERE n.id = :id",
+                String::class.java
+            )
                 .setParameter("id", id)
                 .uniqueResultOptional()
                 .orElse("")
@@ -48,7 +58,6 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
             affectedInstances
         }
 
-    // TODO: Find annotation to replace recurring code with sessions and transactions
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(

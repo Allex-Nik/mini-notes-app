@@ -11,7 +11,7 @@ import javax.sql.DataSource
 class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos the name contains "DAO" - data access object
     val conn: Connection =
         ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
-    val stmt: Statement = conn.createStatement() // TODO: what if connection is closed?
+    val stmt: Statement = conn.createStatement()
 
     fun dropNotesTable() = stmt.execute("DROP TABLE IF EXISTS notes;")
 
@@ -73,27 +73,3 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
         return noteListItems
     }
 }
-
-/**
- * To validate the length of the `title` column:
- * 1. Check if there are already existing violations: SELECT id, title FROM notes WHERE CHAR_LENGTH(title) > 60
- * If there are, decide what to do with them.
- * Shorten? UPDATE notes SET title = LEFT(title, 60) WHERE CHAR_LENGTH(title) > 60;
- *
- * 2. Change the type of the column: ALTER TABLE notes MODIFY title VARCHAR(60)
- * If we do this when there are violations in the table already, the operation will fail
- * (and the constraint will not be enforced for new entries)
- * OR
- * Add a constraint: ALTER TABLE notes ADD CONSTRAINT CHECK (CHAR_LENGTH(title) <= 60)
- * The same goes for this option.
- *
- * Then why does this work with Hibernate? When I do @field:Length(max = MAX_CHARACTERS) in Hibernate,
- * it enforces the constraint even if there were violations before adding the constraint.
- * This annotation doesn't change the schema by itself, the `update` option does. `update` tries to enforce
- * this requirement made by the validator. If there are violations already, `update` fails in this part,
- * but @field:Length(max = MAX_CHARACTERS) still works for the new rows because it is checked by the ORM
- * and not by the DB.
- *
- * So the only way to restrict the field on the DB level is to get rid of the existing violations first,
- * and then to change the schema.
- */
