@@ -13,24 +13,7 @@ import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
 import java.awt.event.KeyEvent
-import javax.swing.DefaultListModel
-import javax.swing.ImageIcon
-import javax.swing.JButton
-import javax.swing.JCheckBox
-import javax.swing.JComponent
-import javax.swing.JFrame
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JMenu
-import javax.swing.JMenuBar
-import javax.swing.JMenuItem
-import javax.swing.JOptionPane
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JTextArea
-import javax.swing.JTextField
-import javax.swing.KeyStroke
-import javax.swing.SwingConstants
+import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
@@ -207,9 +190,12 @@ class MainWindow(val noteService: NoteService) : JFrame() {
             icon = ImageIcon(newNoteImageScaled)
 
             addActionListener {
-                // if the checkbox is selected, the confirmedAction() is not evaluated and the dialog is not shown
-                if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-                    saveNote()
+                // save/ask only if there are changes in the note
+                if (isNoteChanged()) {
+                    // if the checkbox is selected, the confirmedAction() is not evaluated and the dialog is not shown
+                    if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                        saveNote()
+                    }
                 }
                 currentNoteId = null
                 header.text = UIText.START_HEADER_TEXT
@@ -338,16 +324,11 @@ class MainWindow(val noteService: NoteService) : JFrame() {
     private fun addNotesSelectionListener() = notesJList.addListSelectionListener {
         if (notesJList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = notesJList.selectedValue
-        if (textArea.text.isNotEmpty()) {
-            if (currentNoteId == null ||
-                textArea.text != noteService.selectNote(currentNoteId!!) ||
-                header.text != noteService.loadAllNotes().find { it.id == currentNoteId }?.title) {
-                if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-                    saveNote()
-                }
+        if (isNoteChanged()) {
+            if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                saveNote()
             }
         }
-
         currentNoteId = selectedNote.id
         header.text = selectedNote.title
         textArea.text = noteService.selectNote(selectedNote.id)
@@ -358,5 +339,17 @@ class MainWindow(val noteService: NoteService) : JFrame() {
         listModel.clear()
         val loadedNotes = noteService.loadAllNotes()
         loadedNotes.forEach { listModel.addElement(it) }
+    }
+
+    private fun isNoteChanged(): Boolean {
+        val currentText = textArea.text
+        // new note case
+        if (currentNoteId == null) {
+            return currentText.isNotEmpty() || (header.text != UIText.START_HEADER_TEXT && header.text.isNotEmpty())
+        }
+        // existing note case
+        val savedText = noteService.selectNote(currentNoteId!!)
+        return currentText != savedText || header.text != noteService.loadAllNotes()
+            .find { it.id == currentNoteId }?.title // potentially heavy operation
     }
 }
