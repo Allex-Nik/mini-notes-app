@@ -49,6 +49,7 @@ class MainWindow(val noteService: NoteService) : JFrame() {
     private val header = JTextField(UIText.START_HEADER_TEXT)
     private val textArea = JTextArea()
     private var currentNoteId: Long? = null
+    private var isAdjustingSelection = false
 
     init {
 //        noteRepository.dropNotesTable() // left for development
@@ -272,7 +273,9 @@ class MainWindow(val noteService: NoteService) : JFrame() {
         val id = currentNoteId ?: return
         val noteIndexToSelect = (0 until listModel.size).indexOfFirst { listModel[it].id == id }
         if (noteIndexToSelect >= 0) {
+            isAdjustingSelection = true
             notesJList.selectedIndex = noteIndexToSelect
+            isAdjustingSelection = false
             notesJList.ensureIndexIsVisible(noteIndexToSelect)
         } else {
             currentNoteId = null
@@ -321,8 +324,10 @@ class MainWindow(val noteService: NoteService) : JFrame() {
         readNotes() // heavy operation, better to avoid
     }
 
+    // `isAdjustingSelection` flag is used to prevent calling this selection listener
+    // when selection is changed due to automatic updates, and not when the user intentionally selects a different note
     private fun addNotesSelectionListener() = notesJList.addListSelectionListener {
-        if (notesJList.isSelectionEmpty) return@addListSelectionListener
+        if (isAdjustingSelection || notesJList.isSelectionEmpty) return@addListSelectionListener
         val selectedNote = notesJList.selectedValue
         if (isNoteChanged()) {
             if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
@@ -336,7 +341,9 @@ class MainWindow(val noteService: NoteService) : JFrame() {
     }
 
     private fun readNotes() {
+        isAdjustingSelection = true
         listModel.clear()
+        isAdjustingSelection = false
         val loadedNotes = noteService.loadAllNotes()
         loadedNotes.forEach { listModel.addElement(it) }
     }
