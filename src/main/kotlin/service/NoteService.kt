@@ -7,6 +7,67 @@ import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
 import org.education.ui.UIText
 
+/**
+ * REVIEW:
+ *
+ * 1. Service depends on UI layer (layering violation).
+ *    Explanation:
+ *      getNoteName() uses:
+ *        - UIText.START_HEADER_TEXT
+ *        - UIText.EMPTY_NOTE_TITLE
+ *        - MAX_CHARACTERS (from UI package)
+ *
+ *      Business logic must not depend on UI.
+ *      This is the most serious issue in this class.
+ *
+ *
+ * 2. Silent inconsistency risk in saveNote(update case).
+ *    Explanation:
+ *      saveNote() assumes updateNote() always succeeds.
+ *      In JDBC implementation, affected row count is not enforced.
+ *
+ *      If zero rows are updated, service still returns id
+ *      as if operation succeeded.
+ *
+ *
+ * 3. Visibility should be restricted.
+ *    Explanation:
+ *      If this is not a public API, class should be marked internal:
+ *
+ *          internal class NoteService(...)
+ *
+ *      This reduces module surface and prevents external misuse.
+ *
+ *
+ * 4. getNoteName() contains avoidable mutation.
+ *    Explanation:
+ *      Uses mutable var fileName.
+ *      Can be simplified to functional style for clarity.
+ *
+ * ```
+ * fun getNoteName(header: String, text: String): String {
+ *     if (header.length > MAX_CHARACTERS)
+ *         throw HeaderTooLongException("Header length must not be greater than $MAX_CHARACTERS characters")
+ *
+ *     if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
+ *         return header
+ *     }
+ *
+ *     return text
+ *         .substringBefore(' ')
+ *         .trim { !it.isLetterOrDigit() }
+ *         .take(MAX_CHARACTERS)
+ *         .ifEmpty { UIText.EMPTY_NOTE_TITLE }
+ * }
+ *
+ * ```
+ *  No mutable state. No reassignment. Clear linear transformation pipeline. Easier to read.
+ *
+ * 5. Duplicate MAX_CHARACTERS constraint across layers.
+ *    Explanation:
+ *      Constraint is enforced in entity, UI, and service.
+ *      This increases risk of divergence.
+ */
 class NoteService(private val noteRepository: NoteRepository) {
     fun createNotesTableIfNotExists() = noteRepository.createNotesTableIfNotExists()
 

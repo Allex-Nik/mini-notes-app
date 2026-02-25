@@ -17,6 +17,146 @@ import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
+/**
+ * REVIEW: MainWindow (Swing UI)
+ *
+ * ============================================================
+ * 1. ARCHITECTURAL REVIEW (Swing UI level)
+ * ============================================================
+ *
+ * Please don't do huge changes from the architectural point of view, just read this
+ *
+ *
+ * 1.1 UI directly controls persistence lifecycle.
+ *     Explanation:
+ *       noteService.createNotesTableIfNotExists() is called in init.
+ *       UI should not be responsible for schema initialization.
+ *       Bootstrap logic should be separated from presentation.
+ *
+ * 1.2 UI contains business coordination logic.
+ *     Explanation:
+ *       Logic such as:
+ *         - autosave decision
+ *         - change detection (isNoteChanged)
+ *         - repository calls
+ *       is embedded inside UI listeners.
+ *
+ *       This makes UI a controller + service layer combined.
+ *
+ * 1.3 UI repeatedly calls service.loadAllNotes().
+ *     Explanation:
+ *       loadAllNotes() is invoked in:
+ *         - readNotes()
+ *         - isNoteChanged()
+ *
+ *       UI layer is tightly coupled to repository behavior.
+ *       No caching or state abstraction exists.
+ *
+ * 1.4 Heavy state stored in UI class.
+ *     Explanation:
+ *       currentNoteId, isAdjustingSelection, listModel
+ *       and business decisions are all managed here.
+ *
+ *       For small educational project this is acceptable,
+ *       but it does not scale well.
+ *
+ *
+ * ============================================================
+ * 2. POTENTIAL BUGS AND WEAKNESSES
+ * ============================================================
+ *
+ * 2.1 Unsafe use of !! in isNoteChanged().
+ *     Explanation:
+ *       noteService.selectNote(currentNoteId!!)
+ *       If logic changes, this may cause NPE.
+ *       Even if currently safe, it is fragile.
+ *
+ *
+ * 2.2 Expensive call inside isNoteChanged().
+ *     Explanation:
+ *       noteService.loadAllNotes()
+ *           .find { it.id == currentNoteId }
+ *
+ *       This reloads entire note list for simple title comparison.
+ *       It is inefficient and unnecessary.
+ *
+ *
+ * 2.3 Silent inconsistency risk from repository.
+ *     Explanation:
+ *       If updateNote silently affects 0 rows (JDBC case),
+ *       UI assumes success and updates state.
+ *
+ *
+ * 2.4 No exception handling around delete.
+ *     Explanation:
+ *       removeNote() does not handle repository exceptions.
+ *       If repository throws, UI may crash.
+ *
+ *
+ *
+ * 2.5 Missing explicit ordering guarantee.
+ *     Explanation:
+ *       readNotes() displays notes as returned.
+ *       If repository ordering changes,
+ *       UI behavior changes unpredictably.
+ *
+ *
+ * ============================================================
+ * 3. REFACTORING FOR READABILITY
+ * ============================================================
+ *
+ * 3.1 Extract large listener bodies.
+ *     Explanation:
+ *       newNoteItem.addActionListener { ... }
+ *       saveNoteItem.addActionListener { ... }
+ *
+ *       Bodies are long and contain nested logic.
+ *       Extract into private methods:
+ *         - handleNewNote()
+ *         - handleSave()
+ *         - handleExit()
+ *
+ *
+ * 3.2 Simplify get confirmation logic.
+ *     Explanation:
+ *       confirmedAction(...) wrapper is good.
+ *       Reuse consistently to avoid repeated branching.
+ *
+ *
+ * 3.3 Reduce nested if statements.
+ *     Explanation:
+ *       Many blocks use:
+ *         if (condition) {
+ *             if (otherCondition) {
+ *                 ...
+ *             }
+ *         }
+ *
+ *       Prefer early returns to reduce nesting.
+ *
+ *
+ * 3.4 Avoid repeated service calls in same method.
+ *     Explanation:
+ *       In isNoteChanged():
+ *         - selectNote()
+ *         - loadAllNotes()
+ *
+ *       Extract values once into local variables.
+ *
+ *
+ * 3.6 Make fields private where possible.
+ *     Explanation:
+ *       noteService constructor parameter should be private.
+ *
+ *
+ * 3.7 Separate UI building from logic.
+ *     Explanation:
+ *       configureFrame(), configureLeftPanel(), configureTextArea()
+ *       are good separation.
+ *
+ *       Continue this pattern by extracting event logic
+ *       into dedicated private methods.
+ */
 class MainWindow(val noteService: NoteService) : JFrame() {
     // buttons and checkbox
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
