@@ -15,16 +15,31 @@ class NoteRepositoryMock : NoteRepository {
     override fun insertNote(title: String, text: String): Long {
         val id = nextId++
         val now = Instant.now()
-        val note = Note(id, now, now, title, text, false)
+        val note = Note().apply {
+            this.id = id
+            this.creationDateTime = now
+            this.lastEditedDateTime = now
+            this.title = title
+            this.text = text
+            this.removed = false
+        }
         notes.add(note)
         return id
     }
 
     override fun updateNote(id: Long, title: String, text: String) {
         val listIndex = (id - 1).toInt()
-        val note = notes.getOrNull(listIndex) ?: error("Note with id=$id not found")
-        if (note.removed) error("Note with id=$id was already removed")
-        notes[listIndex] = note.copy(lastEditedDateTime = Instant.now(), title = title, text = text)
+        val initialNote = notes.getOrNull(listIndex) ?: error("Note with id=$id not found")
+        if (initialNote.removed) error("Note with id=$id was already removed")
+        val updatedNote = Note().apply {
+            this.id = initialNote.id
+            this.creationDateTime = initialNote.creationDateTime
+            this.lastEditedDateTime = Instant.now()
+            this.title = title
+            this.text = text
+            this.removed = initialNote.removed
+        }
+        notes[listIndex] = updatedNote
     }
 
     override fun selectNote(id: Long): String {
@@ -38,7 +53,15 @@ class NoteRepositoryMock : NoteRepository {
         val listIndex = (id - 1).toInt()
         val note = notes.getOrNull(listIndex) ?: error("Note with id=$id not found")
         if (note.removed) error("Note with id=$id was already removed")
-        notes[listIndex] = note.copy(removed = true)
+        val removedNote = Note().apply {
+            this.id = note.id
+            this.creationDateTime = note.creationDateTime
+            this.lastEditedDateTime = Instant.now()
+            this.title = note.title
+            this.text = note.text
+            this.removed = true
+        }
+        notes[listIndex] = removedNote
         return 1
     }
 

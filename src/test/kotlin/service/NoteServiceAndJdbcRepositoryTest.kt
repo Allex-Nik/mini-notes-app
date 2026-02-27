@@ -42,13 +42,14 @@ class NoteServiceAndJdbcRepositoryTest : NoteServiceAndRepositoryTest() {
                 stmt.executeQuery()
                     .use { result ->
                         result.next()
-                        Note(
-                            result.getLong("id"),
-                            result.getTimestamp("creationDateTime")?.toInstant(),
-                            result.getTimestamp("lastEditedDateTime")?.toInstant(),
-                            result.getString("title"), result.getString("text"),
-                            result.getBoolean("removed")
-                        )
+                        Note().apply {
+                            this.id = result.getLong("id")
+                            this.creationDateTime = result.getTimestamp("creationDateTime")?.toInstant()
+                            this.lastEditedDateTime = result.getTimestamp("lastEditedDateTime")?.toInstant()
+                            this.title = result.getString("title")
+                            this.text = result.getString("text")
+                            this.removed = result.getBoolean("removed")
+                        }
                     }
             }
         assertEquals("Test text", savedNote.text)

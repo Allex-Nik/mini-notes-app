@@ -2,7 +2,7 @@ package service
 
 import org.education.exceptions.BlankNoteNameException
 import org.education.exceptions.HeaderTooLongException
-import org.education.ui.MAX_CHARACTERS
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.service.NoteService
 import org.education.ui.UIText.EMPTY_NOTE_TITLE
 import org.education.ui.UIText.START_HEADER_TEXT
@@ -61,10 +61,10 @@ class NoteServiceTest {
     @Test
     fun `getNoteName truncates long note name from first word (header is empty)`() {
         val header = ""
-        val noteText = "A".repeat(MAX_CHARACTERS + 5)
+        val noteText = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "A".repeat(MAX_CHARACTERS)
+        val expected = "A".repeat(NOTE_TITLE_MAX_LENGTH)
 
         assertEquals(expected, noteName)
     }
@@ -72,17 +72,17 @@ class NoteServiceTest {
     @Test
     fun `getNoteName truncates long note name from first word (header is default)`() {
         val header = START_HEADER_TEXT
-        val noteText = "A".repeat(MAX_CHARACTERS + 5)
+        val noteText = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
 
         val noteName = noteService.getNoteName(header, noteText)
-        val expected = "A".repeat(MAX_CHARACTERS)
+        val expected = "A".repeat(NOTE_TITLE_MAX_LENGTH)
 
         assertEquals(expected, noteName)
     }
 
     @Test
     fun `getNoteName with long header`() {
-        val header = "A".repeat(MAX_CHARACTERS + 5)
+        val header = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
         val noteText = "Text"
 
         assertThrows<HeaderTooLongException> { noteService.getNoteName(header, noteText) }
@@ -112,7 +112,7 @@ class NoteServiceTest {
     @Test
     fun `create note with long name`() {
         val noteId = null
-        val noteName = "A".repeat(MAX_CHARACTERS + 5)
+        val noteName = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
         val noteText = "Text"
         val repoSizeBefore = noteRepository.size()
 
@@ -167,7 +167,7 @@ class NoteServiceTest {
     @Test
     fun `update note with long name`() {
         val noteToUpdateId = noteRepository.insertNote("Old title", "Old text")
-        val noteName = "A".repeat(MAX_CHARACTERS + 5)
+        val noteName = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
         val noteText = "Text"
 
         assertThrows<HeaderTooLongException> { noteService.saveNote(noteToUpdateId, noteName, noteText) }

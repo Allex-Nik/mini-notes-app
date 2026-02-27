@@ -1,6 +1,6 @@
 package org.education.repository
 
-import org.education.ui.MAX_CHARACTERS
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.model.NoteListItem
 import java.sql.Connection
 import java.sql.Statement
@@ -17,7 +17,7 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
 
     override fun createNotesTableIfNotExists() {
         val tableNotesSql =
-            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR($MAX_CHARACTERS), text TEXT, removed BIT(1) DEFAULT 0);"
+            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR($NOTE_TITLE_MAX_LENGTH), text TEXT, removed BIT(1) DEFAULT 0);"
         stmt.execute(tableNotesSql)
     }
 

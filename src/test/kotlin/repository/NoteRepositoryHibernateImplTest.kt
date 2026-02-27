@@ -1,7 +1,7 @@
 package repository
 
 import jakarta.validation.ConstraintViolationException
-import org.education.ui.MAX_CHARACTERS
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.repository.NoteRepositoryHibernateImpl
 import org.hibernate.exception.DataException
 import org.junit.jupiter.api.*
@@ -24,7 +24,7 @@ class NoteRepositoryHibernateImplTest : NoteRepositoryTest() {
 
     @Test
     override fun `insert note with too long title`() {
-        val title = "A".repeat(MAX_CHARACTERS + 5)
+        val title = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
         val text = "Text"
 
         assertThrows<ConstraintViolationException> { noteRepository.insertNote(title, text) }
@@ -33,7 +33,7 @@ class NoteRepositoryHibernateImplTest : NoteRepositoryTest() {
     @Test
     override fun `updateNote with too long title`() {
         val noteId = noteRepository.insertNote("Old title", "Old text")
-        val newTitle = "A".repeat(MAX_CHARACTERS + 5)
+        val newTitle = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
 
         assertThrows<DataException> {
             noteRepository.updateNote(noteId, newTitle, "New Text")

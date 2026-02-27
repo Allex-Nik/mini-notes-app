@@ -15,13 +15,13 @@ class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->
-            val note = Note(
-                creationDateTime = Instant.now(),
-                lastEditedDateTime = Instant.now(),
-                title = title,
-                text = text,
+            val note = Note().apply {
+                creationDateTime = Instant.now()
+                lastEditedDateTime = Instant.now()
+                this.title = title
+                this.text = text
                 removed = false
-            )
+            }
             session.persist(note)
             note.id ?: error("id was not generated")
         }

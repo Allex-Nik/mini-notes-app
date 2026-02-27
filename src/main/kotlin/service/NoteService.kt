@@ -1,6 +1,6 @@
 package org.education.service
 
-import org.education.ui.MAX_CHARACTERS
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.exceptions.BlankNoteNameException
 import org.education.exceptions.HeaderTooLongException
 import org.education.model.NoteListItem
@@ -13,20 +13,20 @@ class NoteService(private val noteRepository: NoteRepository) {
     /**
      * Given the [header] and the [text] of the note, computes the name of the note.
      * If the [header] is not default and not empty, the name of the note is the [header].
-     * Otherwise, the name of the note is the first [MAX_CHARACTERS] characters of the first word in the note.
+     * Otherwise, the name of the note is the first [NOTE_TITLE_MAX_LENGTH] characters of the first word in the note.
      * If the [text] of the note is empty (and the [header] is empty or default),
      * the note is called [UIText.EMPTY_NOTE_TITLE].
      *
      * @param header header of the note.
      * @param text text of the note.
      *
-     * @throws HeaderTooLongException if the [header] of the note is larger than [MAX_CHARACTERS].
+     * @throws HeaderTooLongException if the [header] of the note is larger than [NOTE_TITLE_MAX_LENGTH].
      *
      * @return the name of the note.
      */
     fun getNoteName(header: String, text: String): String {
-        if (header.length > MAX_CHARACTERS)
-            throw HeaderTooLongException(MAX_CHARACTERS)
+        if (header.length > NOTE_TITLE_MAX_LENGTH)
+            throw HeaderTooLongException(NOTE_TITLE_MAX_LENGTH)
 
         val fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
             header
@@ -38,7 +38,7 @@ class NoteService(private val noteRepository: NoteRepository) {
                 .trim { !it.isLetterOrDigit() }
 
             // limit the word to the maximum allowed number of characters
-            if (fileName.length > MAX_CHARACTERS) fileName = fileName.take(MAX_CHARACTERS)
+            if (fileName.length > NOTE_TITLE_MAX_LENGTH) fileName = fileName.take(NOTE_TITLE_MAX_LENGTH)
 
             if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
 
@@ -55,13 +55,13 @@ class NoteService(private val noteRepository: NoteRepository) {
      * @param noteName name of the note.
      * @param text text of the note.
      *
-     * @throws HeaderTooLongException if the name of the note is larger than [MAX_CHARACTERS].
+     * @throws HeaderTooLongException if the name of the note is larger than [NOTE_TITLE_MAX_LENGTH].
      *
      * @return the [id] of the created or updated note.
      */
     fun saveNote(id: Long?, noteName: String, text: String): Long {
-        if (noteName.length > MAX_CHARACTERS)
-            throw HeaderTooLongException(MAX_CHARACTERS)
+        if (noteName.length > NOTE_TITLE_MAX_LENGTH)
+            throw HeaderTooLongException(NOTE_TITLE_MAX_LENGTH)
         if (noteName.isBlank()) throw BlankNoteNameException()
 
         return if (id == null) {

@@ -2,7 +2,7 @@ package repository
 
 import com.mysql.cj.jdbc.MysqlDataSource
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation
-import org.education.ui.MAX_CHARACTERS
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.repository.NoteRepositoryJdbcImpl
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
@@ -33,7 +33,7 @@ class NoteRepositoryJdbcImplTest : NoteRepositoryTest() {
 
     @Test
     override fun `insert note with too long title`() {
-        val title = "A".repeat(MAX_CHARACTERS + 5)
+        val title = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
         val text = "Text"
 
         assertThrows<MysqlDataTruncation> { noteRepository.insertNote(title, text) }
@@ -42,7 +42,7 @@ class NoteRepositoryJdbcImplTest : NoteRepositoryTest() {
     @Test
     override fun `updateNote with too long title`() {
         val noteId = noteRepository.insertNote("Old title", "Old text")
-        val newTitle = "A".repeat(MAX_CHARACTERS + 5)
+        val newTitle = "A".repeat(NOTE_TITLE_MAX_LENGTH + 5)
 
         assertThrows<MysqlDataTruncation> {
             noteRepository.updateNote(noteId, newTitle, "New Text")
