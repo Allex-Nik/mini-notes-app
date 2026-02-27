@@ -264,7 +264,7 @@ class MainWindow(val noteService: NoteService) : JFrame() {
 
             readNotes()
         } catch (ex: HeaderTooLongException) {
-            notifyAboutLongHeader(ex.message)
+            notifyAboutLongHeader(ex.message ?: "Header is too long")
         }
     }
 

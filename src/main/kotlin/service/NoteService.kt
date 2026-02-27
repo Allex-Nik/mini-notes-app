@@ -26,7 +26,7 @@ class NoteService(private val noteRepository: NoteRepository) {
      */
     fun getNoteName(header: String, text: String): String {
         if (header.length > MAX_CHARACTERS)
-            throw HeaderTooLongException("Header length must not be greater than $MAX_CHARACTERS characters")
+            throw HeaderTooLongException(MAX_CHARACTERS)
 
         val fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
             header
@@ -61,8 +61,8 @@ class NoteService(private val noteRepository: NoteRepository) {
      */
     fun saveNote(id: Long?, noteName: String, text: String): Long {
         if (noteName.length > MAX_CHARACTERS)
-            throw HeaderTooLongException("Note name length must not be greater than $MAX_CHARACTERS characters")
-        if (noteName.isBlank()) throw BlankNoteNameException("Note name must not be blank")
+            throw HeaderTooLongException(MAX_CHARACTERS)
+        if (noteName.isBlank()) throw BlankNoteNameException()
 
         return if (id == null) {
             noteRepository.insertNote(noteName, text)

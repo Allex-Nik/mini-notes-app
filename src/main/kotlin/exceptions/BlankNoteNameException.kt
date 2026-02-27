@@ -1,3 +1,5 @@
 package org.education.exceptions
 
-class BlankNoteNameException(override val message: String) : Exception(message)
+internal class BlankNoteNameException(
+    message: String = "Note name must not be blank"
+) : IllegalArgumentException(message)

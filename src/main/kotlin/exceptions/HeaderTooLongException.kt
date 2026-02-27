@@ -1,3 +1,6 @@
 package org.education.exceptions
 
-class HeaderTooLongException(override val message: String) : Exception(message)
+internal class HeaderTooLongException(
+    maxLength: Int,
+    message: String = "Header length must not exceed $maxLength characters"
+) : IllegalArgumentException(message)
