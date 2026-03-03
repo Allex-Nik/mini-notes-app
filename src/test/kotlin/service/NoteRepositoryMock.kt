@@ -6,7 +6,7 @@ import org.education.repository.NoteRepository
 import java.time.Instant
 
 // Assumes that the notes are not deleted, and only the "remove" flag is changed
-class NoteRepositoryMock : NoteRepository {
+internal class NoteRepositoryMock : NoteRepository {
     private var nextId = 1L
     private val notes = mutableListOf<Note>()
 
@@ -71,8 +71,6 @@ class NoteRepositoryMock : NoteRepository {
             .map {
                 NoteListItem(
                     id = it.id ?: error("id is missing"),
-                    creationDateTime = it.creationDateTime,
-                    lastEditedDateTime = it.lastEditedDateTime,
                     title = it.title
                 )
             }

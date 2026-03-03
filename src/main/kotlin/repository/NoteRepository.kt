@@ -2,7 +2,7 @@ package org.education.repository
 
 import org.education.model.NoteListItem
 
-interface NoteRepository {
+internal interface NoteRepository {
     fun createNotesTableIfNotExists()
     fun insertNote(title: String, text: String): Long
     fun updateNote(id: Long, title: String, text: String)

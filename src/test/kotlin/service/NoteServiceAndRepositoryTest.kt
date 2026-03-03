@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // reuse the class for every test method
-abstract class NoteServiceAndRepositoryTest {
+internal abstract class NoteServiceAndRepositoryTest {
     abstract val noteRepository: NoteRepository
     abstract val noteService: NoteService
 

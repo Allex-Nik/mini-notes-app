@@ -7,7 +7,7 @@ import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
 import org.education.ui.UIText
 
-class NoteService(private val noteRepository: NoteRepository) {
+internal class NoteService(private val noteRepository: NoteRepository) {
     fun createNotesTableIfNotExists() = noteRepository.createNotesTableIfNotExists()
 
     /**

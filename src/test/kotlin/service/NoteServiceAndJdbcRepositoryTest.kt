@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class NoteServiceAndJdbcRepositoryTest : NoteServiceAndRepositoryTest() {
+private class NoteServiceAndJdbcRepositoryTest : NoteServiceAndRepositoryTest() {
     private val dataSource = MysqlDataSource()
         .apply {
             serverName = "localhost"
@@ -44,8 +44,8 @@ class NoteServiceAndJdbcRepositoryTest : NoteServiceAndRepositoryTest() {
                         result.next()
                         Note().apply {
                             this.id = result.getLong("id")
-                            this.creationDateTime = result.getTimestamp("creationDateTime")?.toInstant()
-                            this.lastEditedDateTime = result.getTimestamp("lastEditedDateTime")?.toInstant()
+                            this.creationDateTime = result.getTimestamp("creationDateTime").toInstant()
+                            this.lastEditedDateTime = result.getTimestamp("lastEditedDateTime").toInstant()
                             this.title = result.getString("title")
                             this.text = result.getString("text")
                             this.removed = result.getBoolean("removed")

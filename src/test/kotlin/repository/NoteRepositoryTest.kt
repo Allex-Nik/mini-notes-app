@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class NoteRepositoryTest {
+internal abstract class NoteRepositoryTest {
     abstract val noteRepository: NoteRepository
 
     @BeforeEach

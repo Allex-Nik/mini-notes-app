@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import org.hibernate.validator.constraints.Length
 import java.time.Instant
 
-const val NOTE_TITLE_MAX_LENGTH = 60
+internal const val NOTE_TITLE_MAX_LENGTH = 60
 
 // we can use jpa-plugin instead of default values: https://www.baeldung.com/kotlin/jpa#compiler-plugins-jpa-plugin
 @Entity
@@ -14,9 +14,11 @@ class Note {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
 
-    var creationDateTime: Instant? = null // timestamps are not always present in the DB, thus remain nullable
+    @Column(nullable = false)
+    var creationDateTime: Instant = Instant.now()
 
-    var lastEditedDateTime: Instant? = null
+    @Column(nullable = false)
+    var lastEditedDateTime: Instant = Instant.now()
 
     @field:Length(max = NOTE_TITLE_MAX_LENGTH)
     @Column(nullable = false)

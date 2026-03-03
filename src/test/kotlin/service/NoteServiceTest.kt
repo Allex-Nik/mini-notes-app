@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class NoteServiceTest {
+private class NoteServiceTest {
     val noteRepository = NoteRepositoryMock()
     val noteService = NoteService(noteRepository)
 

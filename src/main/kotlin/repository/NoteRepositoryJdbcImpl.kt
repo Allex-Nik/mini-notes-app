@@ -8,7 +8,7 @@ import java.sql.Timestamp
 import java.time.Instant
 import javax.sql.DataSource
 
-class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos the name contains "DAO" - data access object
+internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos the name contains "DAO" - data access object
     val conn: Connection =
         ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
     val stmt: Statement = conn.createStatement()
@@ -64,8 +64,6 @@ class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos
             noteListItems.add(
                 NoteListItem(
                     res.getLong("id"),
-                    res.getTimestamp("creationDateTime")?.toInstant(),
-                    res.getTimestamp("lastEditedDateTime")?.toInstant(),
                     res.getString("title")
                 )
             )

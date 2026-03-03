@@ -17,7 +17,7 @@ import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
-class MainWindow(val noteService: NoteService) : JFrame() {
+internal class MainWindow(private val noteService: NoteService) : JFrame() {
     // buttons and checkbox
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
     private val loadButton = JButton(UIText.LOAD_BUTTON_TITLE)

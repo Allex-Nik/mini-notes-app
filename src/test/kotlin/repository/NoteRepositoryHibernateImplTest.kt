@@ -7,7 +7,7 @@ import org.hibernate.exception.DataException
 import org.junit.jupiter.api.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class NoteRepositoryHibernateImplTest : NoteRepositoryTest() {
+private class NoteRepositoryHibernateImplTest : NoteRepositoryTest() {
     override val noteRepository = NoteRepositoryHibernateImpl("hibernate/hibernate_test.cfg.xml")
 
     @BeforeEach

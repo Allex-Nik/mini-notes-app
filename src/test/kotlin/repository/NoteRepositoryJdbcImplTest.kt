@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class NoteRepositoryJdbcImplTest : NoteRepositoryTest() {
+private class NoteRepositoryJdbcImplTest : NoteRepositoryTest() {
     private val dataSource = MysqlDataSource()
         .apply {
             serverName = "localhost"
