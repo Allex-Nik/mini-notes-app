@@ -6,7 +6,7 @@ import javax.swing.text.AttributeSet
 import javax.swing.text.BadLocationException
 import javax.swing.text.DocumentFilter
 
-class HeaderLengthFilter : DocumentFilter() {
+internal class HeaderLengthFilter : DocumentFilter() {
     @Throws(BadLocationException::class)
     override fun insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet?) {
         if ((fb.document.length + str.length) <= NOTE_TITLE_MAX_LENGTH) {

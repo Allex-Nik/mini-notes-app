@@ -6,7 +6,7 @@ import java.awt.Font
 import javax.swing.BorderFactory
 import javax.swing.border.Border
 
-object Theme {
+internal object Theme {
     val buttonsPanelColor = Color(244, 231, 207)
     val savedNotesPanelColor = Color(244, 231, 207)
     val savedNotesListColor = Color(244, 231, 207)

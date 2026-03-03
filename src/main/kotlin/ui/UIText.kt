@@ -1,6 +1,6 @@
 package org.education.ui
 
-object UIText {
+internal object UIText {
     const val EMPTY_NOTE_TITLE = "empty_note"
 
     const val FRAME_TITLE = "Notes"
