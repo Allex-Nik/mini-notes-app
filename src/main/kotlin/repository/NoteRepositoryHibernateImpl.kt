@@ -50,15 +50,14 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
         }
 
     // If an exception is triggered inside a transaction, the transaction is rolled back
-    override fun deleteNote(id: Long): Int =
-        sessionFactory.fromTransaction { session ->
+    override fun deleteNote(id: Long): Unit =
+        sessionFactory.inTransaction { session ->
             val affectedInstances = session
                 .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
                 .setParameter("id", id)
                 .executeUpdate()
             if (affectedInstances == 0) error("The note was not deleted")
             if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
-            affectedInstances
         }
 
     override fun loadAllNotes(): List<NoteListItem> =

@@ -49,7 +49,7 @@ internal class NoteRepositoryMock : NoteRepository {
         return note.text
     }
 
-    override fun deleteNote(id: Long): Int {
+    override fun deleteNote(id: Long) {
         val listIndex = (id - 1).toInt()
         val note = notes.getOrNull(listIndex) ?: error("Note with id=$id not found")
         if (note.removed) error("Note with id=$id was already removed")
@@ -62,7 +62,6 @@ internal class NoteRepositoryMock : NoteRepository {
             this.removed = true
         }
         notes[listIndex] = removedNote
-        return 1
     }
 
     override fun loadAllNotes(): List<NoteListItem> =

@@ -53,9 +53,11 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in s
         }
     }
 
-    override fun deleteNote(id: Long) = conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
+    override fun deleteNote(id: Long): Unit = conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
         stmt.setLong(1, id)
-        stmt.executeUpdate()
+        val affectedInstances = stmt.executeUpdate()
+        if (affectedInstances == 0) error("The note was not deleted")
+        if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
     }
 
     override fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false;").use { res ->

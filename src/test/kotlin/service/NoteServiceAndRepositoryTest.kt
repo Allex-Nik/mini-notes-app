@@ -48,9 +48,9 @@ internal abstract class NoteServiceAndRepositoryTest {
     @Test
     fun deleteNote() {
         val noteId = noteRepository.insertNote("Title", "Text")
-        val deletedNotesNumber = noteService.deleteNote(noteId)
-
-        assertEquals(1, deletedNotesNumber)
+        assertEquals(1, noteRepository.loadAllNotes().size)
+        noteService.deleteNote(noteId)
+        assertEquals(0, noteRepository.loadAllNotes().size)
     }
 
     @Test

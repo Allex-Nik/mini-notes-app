@@ -7,6 +7,6 @@ internal interface NoteRepository {
     fun insertNote(title: String, text: String): Long
     fun updateNote(id: Long, title: String, text: String)
     fun selectNote(id: Long): String
-    fun deleteNote(id: Long): Int
+    fun deleteNote(id: Long)
     fun loadAllNotes(): List<NoteListItem>
 }
