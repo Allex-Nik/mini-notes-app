@@ -1,5 +1,6 @@
 package org.education.repository
 
+import org.education.exceptions.NoteNotFoundException
 import org.education.model.Note
 import org.education.model.NoteListItem
 import org.hibernate.SessionFactory
@@ -28,7 +29,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
 
     override fun updateNote(id: Long, title: String, text: String) =
         sessionFactory.inTransaction { session ->
-            session.createMutationQuery(
+            val affectedInstances = session.createMutationQuery(
                 "UPDATE Note SET lastEditedDateTime = :now, title = :title, text = :text WHERE id = :id"
             )
                 .setParameter("now", Instant.now())
@@ -36,6 +37,8 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
                 .setParameter("text", text)
                 .setParameter("id", id)
                 .executeUpdate()
+            if (affectedInstances == 0) throw NoteNotFoundException()
+            if (affectedInstances > 1) error("Attempt to update multiple notes. Nothing was updated.")
         }
 
     override fun selectNote(id: Long): String =
@@ -46,7 +49,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
             )
                 .setParameter("id", id)
                 .uniqueResultOptional()
-                .orElse("")
+                .orElseThrow { NoteNotFoundException() }
         }
 
     // If an exception is triggered inside a transaction, the transaction is rolled back

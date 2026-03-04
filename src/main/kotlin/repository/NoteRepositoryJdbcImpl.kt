@@ -1,5 +1,6 @@
 package org.education.repository
 
+import org.education.exceptions.NoteNotFoundException
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.model.NoteListItem
 import java.sql.Connection
@@ -8,7 +9,7 @@ import java.sql.Timestamp
 import java.time.Instant
 import javax.sql.DataSource
 
-internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in some repos the name contains "DAO" - data access object
+internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
     val conn: Connection =
         ds.connection // DataSource is preferred over DriverManager: https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html
     val stmt: Statement = conn.createStatement()
@@ -42,34 +43,40 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository { // in s
             stmt.setString(2, title)
             stmt.setString(3, text)
             stmt.setLong(4, id)
-            stmt.executeUpdate()
+            val affectedInstances = stmt.executeUpdate()
+            if (affectedInstances == 0) throw NoteNotFoundException()
+            if (affectedInstances > 1) error("Attempt to update multiple notes. Nothing was updated.")
         }
     }
 
-    override fun selectNote(id: Long): String = conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
-        stmt.setLong(1, id)
-        return stmt.executeQuery().use { res ->
-            if (res.next()) res.getString("text") else ""
+    override fun selectNote(id: Long): String =
+        conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
+            stmt.setLong(1, id)
+            return stmt.executeQuery().use { res ->
+                if (res.next()) res.getString("text") else throw NoteNotFoundException()
+            }
         }
-    }
 
-    override fun deleteNote(id: Long): Unit = conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
-        stmt.setLong(1, id)
-        val affectedInstances = stmt.executeUpdate()
-        if (affectedInstances == 0) error("The note was not deleted")
-        if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
-    }
-
-    override fun loadAllNotes(): List<NoteListItem> = stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false;").use { res ->
-        val noteListItems = mutableListOf<NoteListItem>()
-        while (res.next()) {
-            noteListItems.add(
-                NoteListItem(
-                    res.getLong("id"),
-                    res.getString("title")
-                )
-            )
+    override fun deleteNote(id: Long): Unit =
+        conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
+            stmt.setLong(1, id)
+            val affectedInstances = stmt.executeUpdate()
+            if (affectedInstances == 0) error("The note was not deleted")
+            if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
         }
-        return noteListItems
-    }
+
+    override fun loadAllNotes(): List<NoteListItem> =
+        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false;")
+            .use { res ->
+                val noteListItems = mutableListOf<NoteListItem>()
+                while (res.next()) {
+                    noteListItems.add(
+                        NoteListItem(
+                            res.getLong("id"),
+                            res.getString("title")
+                        )
+                    )
+                }
+                return noteListItems
+            }
 }

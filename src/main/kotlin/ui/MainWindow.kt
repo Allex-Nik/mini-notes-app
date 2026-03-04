@@ -1,6 +1,7 @@
 package org.education.ui
 
 import org.education.exceptions.HeaderTooLongException
+import org.education.exceptions.NoteNotFoundException
 import org.education.model.NoteListItem
 import org.education.service.NoteService
 import org.education.ui.UIText.CONFIRM_DELETE_MESSAGE
@@ -253,7 +254,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         }
     }
 
-    private fun saveNote() {
+    private fun saveNote(): Boolean {
         val noteText = textArea.text
         val noteHeader = header.text
 
@@ -261,11 +262,15 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             val noteName = noteService.getNoteName(noteHeader, noteText)
             currentNoteId = noteService.saveNote(currentNoteId, noteName, noteText)
             statusLabel.text = UIText.noteSaved(noteName)
-
             readNotes()
         } catch (ex: HeaderTooLongException) {
-            notifyAboutLongHeader(ex.message ?: "Header is too long")
+            notifyAboutError(ex.message ?: "Header is too long", UIText.HEADER_ERROR_TITLE)
+            return false
+        } catch (ex: NoteNotFoundException) {
+            handleNoteNotFound(ex.message ?: "Note not found")
+            return false
         }
+        return true
     }
 
     private fun restoreSelection() {
@@ -292,11 +297,11 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         return choice == JOptionPane.YES_OPTION
     }
 
-    private fun notifyAboutLongHeader(message: String) {
+    private fun notifyAboutError(message: String, notificationTitle: String) {
         JOptionPane.showMessageDialog(
             this,
             message,
-            UIText.HEADER_ERROR_TITLE,
+            notificationTitle,
             JOptionPane.ERROR_MESSAGE
         )
     }
@@ -330,13 +335,28 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         val selectedNote = notesJList.selectedValue
         if (isNoteChanged()) {
             if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-                saveNote()
+                // if the note is expected to be saved, but it wasn't, keep selection in order not to lose the text
+                val noteSaved = saveNote()
+                if (!noteSaved) return@addListSelectionListener
             }
         }
         currentNoteId = selectedNote.id
         header.text = selectedNote.title
-        textArea.text = noteService.selectNote(selectedNote.id)
+        try {
+            textArea.text = noteService.selectNote(selectedNote.id)
+        } catch (ex: NoteNotFoundException) {
+            handleNoteNotFound(ex.message ?: "Note not found")
+            header.text = UIText.START_HEADER_TEXT
+            textArea.text = ""
+        }
         restoreSelection()
+    }
+
+    private fun handleNoteNotFound(message: String) {
+        notifyAboutError(message, UIText.NOTE_NOT_FOUND_TITLE)
+        currentNoteId = null
+        statusLabel.text = UIText.NOTE_NOT_FOUND_LABEL
+        readNotes()
     }
 
     private fun readNotes() {
@@ -354,7 +374,11 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             return currentText.isNotEmpty() || (header.text != UIText.START_HEADER_TEXT && header.text.isNotEmpty())
         }
         // existing note case
-        val savedText = noteService.selectNote(currentNoteId!!)
+        val savedText = try {
+            noteService.selectNote(currentNoteId!!)
+        } catch (ex: NoteNotFoundException) {
+            handleNoteNotFound(ex.message ?: "Note not found")
+        }
         return currentText != savedText || header.text != noteService.loadAllNotes()
             .find { it.id == currentNoteId }?.title // potentially heavy operation
     }

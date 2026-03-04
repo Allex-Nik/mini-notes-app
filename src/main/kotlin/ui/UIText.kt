@@ -21,6 +21,7 @@ internal object UIText {
     const val EXIT_TITLE = "Exit"
     const val SAVE_TITLE = "Save"
     const val HEADER_ERROR_TITLE = "Too long header error"
+    const val NOTE_NOT_FOUND_TITLE = "Note not found"
     const val NEW_NOTE_TITLE = "New"
     const val START_HEADER_TEXT = "Add your header here"
 
@@ -32,6 +33,7 @@ internal object UIText {
     const val NOTE_CREATED_MESSAGE = "New note created successfully"
 
     const val READY_LABEL = "Ready"
+    const val NOTE_NOT_FOUND_LABEL = "Note not found in the database."
 
     fun noteSaved(fileName: String) = "Note $fileName saved successfully"
     fun noteDeleted(fileName: String) = "Note $fileName deleted successfully"
