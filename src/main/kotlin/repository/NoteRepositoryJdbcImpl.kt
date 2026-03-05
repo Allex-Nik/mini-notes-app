@@ -66,7 +66,7 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
         }
 
     override fun loadAllNotes(): List<NoteListItem> =
-        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false;")
+        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC, title;")
             .use { res ->
                 val noteListItems = mutableListOf<NoteListItem>()
                 while (res.next()) {

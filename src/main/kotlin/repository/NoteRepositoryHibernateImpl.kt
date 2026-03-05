@@ -66,7 +66,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false",
+                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY lastEditedDateTime DESC, title ASC",
                 NoteListItem::class.java
             )
                 .resultList
