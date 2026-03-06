@@ -1,12 +1,11 @@
 package repository
 
+import org.education.exceptions.NoteNotDeletedException
+import org.education.exceptions.NoteNotFoundException
 import org.education.repository.NoteRepository
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal abstract class NoteRepositoryTest {
@@ -51,6 +50,13 @@ internal abstract class NoteRepositoryTest {
     abstract fun `updateNote with too long title`()
 
     @Test
+    fun `updateNote with deleted note`() {
+        val noteId = noteRepository.insertNote("Old title", "Old text")
+        noteRepository.deleteNote(noteId)
+        assertThrows<NoteNotFoundException> { noteRepository.updateNote(noteId, "New Title", "New Text") }
+    }
+
+    @Test
     fun selectNote() {
         val noteId = noteRepository.insertNote("Title", "Text to select")
         val selectedNoteText = noteRepository.selectNote(noteId)
@@ -70,6 +76,11 @@ internal abstract class NoteRepositoryTest {
     }
 
     @Test
+    fun `deleteNote with non-existing note`() {
+        assertThrows<NoteNotDeletedException> { noteRepository.deleteNote(0) }
+    }
+
+    @Test
     fun loadAllNotes() {
         val emptyNotes = noteRepository.loadAllNotes()
         val firstNoteId = noteRepository.insertNote("Title1", "Text1")
@@ -82,5 +93,18 @@ internal abstract class NoteRepositoryTest {
         assertEquals(secondNoteId, notes[1].id)
         assertEquals("Title1", notes[0].title)
         assertEquals("Title2", notes[1].title)
+    }
+
+    @Test
+    fun `loadAllNotes sorts notes by lastEditedDateTime in descending order`() {
+        val firstNoteId = noteRepository.insertNote("Title1", "Text1")
+        val secondNoteId = noteRepository.insertNote("Title2", "Text2")
+        val thirdNoteId = noteRepository.insertNote("Title3", "Text3")
+        noteRepository.updateNote(secondNoteId, "Title2 new", "Text2 new")
+        val notes = noteRepository.loadAllNotes()
+
+        assertEquals(secondNoteId, notes[0].id)
+        assertEquals(thirdNoteId, notes[1].id)
+        assertEquals(firstNoteId, notes[2].id)
     }
 }

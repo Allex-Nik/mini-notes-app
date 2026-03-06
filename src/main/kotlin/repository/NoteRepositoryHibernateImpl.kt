@@ -1,8 +1,13 @@
 package org.education.repository
 
+import org.education.exceptions.MultipleRowsAffectedException
+import org.education.exceptions.NonUniqueNoteException
+import org.education.exceptions.NoteNotDeletedException
 import org.education.exceptions.NoteNotFoundException
+import org.education.exceptions.NoteNotInsertedException
 import org.education.model.Note
 import org.education.model.NoteListItem
+import org.hibernate.NonUniqueResultException
 import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
 import java.time.Instant
@@ -24,13 +29,13 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
                 removed = false
             }
             session.persist(note)
-            note.id ?: error("id was not generated")
+            note.id ?: throw NoteNotInsertedException()
         }
 
     override fun updateNote(id: Long, title: String, text: String) =
         sessionFactory.inTransaction { session ->
             val affectedInstances = session.createMutationQuery(
-                "UPDATE Note SET lastEditedDateTime = :now, title = :title, text = :text WHERE id = :id"
+                "UPDATE Note n SET n.lastEditedDateTime = :now, n.title = :title, n.text = :text WHERE n.id = :id AND n.removed = false"
             )
                 .setParameter("now", Instant.now())
                 .setParameter("title", title)
@@ -38,18 +43,22 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
                 .setParameter("id", id)
                 .executeUpdate()
             if (affectedInstances == 0) throw NoteNotFoundException()
-            if (affectedInstances > 1) error("Attempt to update multiple notes. Nothing was updated.")
+            if (affectedInstances > 1) throw MultipleRowsAffectedException()
         }
 
     override fun selectNote(id: Long): String =
         sessionFactory.fromTransaction { session ->
-            session.createQuery(
-                "SELECT n.text FROM Note n WHERE n.id = :id",
-                String::class.java
-            )
-                .setParameter("id", id)
-                .uniqueResultOptional()
-                .orElseThrow { NoteNotFoundException() }
+            try {
+                session.createQuery(
+                    "SELECT n.text FROM Note n WHERE n.id = :id AND n.removed = false",
+                    String::class.java
+                )
+                    .setParameter("id", id)
+                    .uniqueResultOptional() // throws NonUniqueResultException if > 1 row is returned
+                    .orElseThrow { NoteNotFoundException() }
+            } catch (_: NonUniqueResultException) {
+                throw NonUniqueNoteException()
+            }
         }
 
     // If an exception is triggered inside a transaction, the transaction is rolled back
@@ -59,14 +68,14 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
                 .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
                 .setParameter("id", id)
                 .executeUpdate()
-            if (affectedInstances == 0) error("The note was not deleted")
-            if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
+            if (affectedInstances == 0) throw NoteNotDeletedException()
+            if (affectedInstances > 1) throw MultipleRowsAffectedException()
         }
 
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY lastEditedDateTime DESC, title ASC",
+                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY lastEditedDateTime DESC",
                 NoteListItem::class.java
             )
                 .resultList

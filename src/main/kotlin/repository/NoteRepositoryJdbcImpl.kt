@@ -1,6 +1,10 @@
 package org.education.repository
 
+import org.education.exceptions.MultipleRowsAffectedException
+import org.education.exceptions.NonUniqueNoteException
+import org.education.exceptions.NoteNotDeletedException
 import org.education.exceptions.NoteNotFoundException
+import org.education.exceptions.NoteNotInsertedException
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.model.NoteListItem
 import java.sql.Connection
@@ -18,7 +22,7 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
 
     override fun createNotesTableIfNotExists() {
         val tableNotesSql =
-            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME, lastEditedDateTime DATETIME, title VARCHAR($NOTE_TITLE_MAX_LENGTH), text TEXT, removed BIT(1) DEFAULT 0);"
+            "CREATE TABLE IF NOT EXISTS notes (id SERIAL PRIMARY KEY, creationDateTime DATETIME(6), lastEditedDateTime DATETIME(6), title VARCHAR($NOTE_TITLE_MAX_LENGTH), text TEXT, removed BIT(1) DEFAULT 0);"
         stmt.execute(tableNotesSql)
     }
 
@@ -34,26 +38,32 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
             stmt.setString(4, text)
             stmt.setBoolean(5, false)
             stmt.executeUpdate()
-            stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else throw Exception("Failed to insert a new note") }
+            stmt.generatedKeys.use { keys ->
+                if (keys.next()) keys.getLong(1) else throw NoteNotInsertedException()
+            }
         }
 
     override fun updateNote(id: Long, title: String, text: String) {
-        conn.prepareStatement("UPDATE notes SET lastEditedDateTime = ?, title = ?, text = ? WHERE id = ?").use { stmt ->
-            stmt.setTimestamp(1, Timestamp.from(Instant.now()))
-            stmt.setString(2, title)
-            stmt.setString(3, text)
-            stmt.setLong(4, id)
-            val affectedInstances = stmt.executeUpdate()
-            if (affectedInstances == 0) throw NoteNotFoundException()
-            if (affectedInstances > 1) error("Attempt to update multiple notes. Nothing was updated.")
-        }
+        conn.prepareStatement("UPDATE notes SET lastEditedDateTime = ?, title = ?, text = ? WHERE id = ? AND removed = false;")
+            .use { stmt ->
+                stmt.setTimestamp(1, Timestamp.from(Instant.now()))
+                stmt.setString(2, title)
+                stmt.setString(3, text)
+                stmt.setLong(4, id)
+                val affectedInstances = stmt.executeUpdate()
+                if (affectedInstances == 0) throw NoteNotFoundException()
+                if (affectedInstances > 1) throw MultipleRowsAffectedException()
+            }
     }
 
     override fun selectNote(id: Long): String =
-        conn.prepareStatement("SELECT text FROM notes WHERE id = ?").use { stmt ->
+        conn.prepareStatement("SELECT text FROM notes WHERE id = ? AND removed = false").use { stmt ->
             stmt.setLong(1, id)
             return stmt.executeQuery().use { res ->
-                if (res.next()) res.getString("text") else throw NoteNotFoundException()
+                if (!res.next()) throw NoteNotFoundException()
+                val noteText = res.getString("text")
+                if (res.next()) throw NonUniqueNoteException()
+                noteText
             }
         }
 
@@ -61,12 +71,12 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
         conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
             stmt.setLong(1, id)
             val affectedInstances = stmt.executeUpdate()
-            if (affectedInstances == 0) error("The note was not deleted")
-            if (affectedInstances > 1) error("Attempt to delete multiple notes. Nothing was deleted.")
+            if (affectedInstances == 0) throw NoteNotDeletedException()
+            if (affectedInstances > 1) throw MultipleRowsAffectedException()
         }
 
     override fun loadAllNotes(): List<NoteListItem> =
-        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC, title;")
+        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC;")
             .use { res ->
                 val noteListItems = mutableListOf<NoteListItem>()
                 while (res.next()) {

@@ -18,6 +18,7 @@ import javax.swing.*
 import javax.swing.text.AbstractDocument
 import kotlin.system.exitProcess
 
+// TODO: rewrite to Compose in a separate branch, do not extract controller
 internal class MainWindow(private val noteService: NoteService) : JFrame() {
     // buttons and checkbox
     private val saveButton = JButton(UIText.SAVE_BUTTON_TITLE)
