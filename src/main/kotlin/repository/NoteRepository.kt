@@ -57,8 +57,10 @@ internal interface NoteRepository {
 
     /**
      * Returns a list of all notes in the database without their texts. Removed notes are not returned.
+     * The resulting list is sorted by the lastEditedDateTime in descending order and by id in descending order.
      *
-     * @return list of all notes without their texts.
+     * @return list of all notes without their texts,
+     * sorted by lastEditedDateTime in descending order and by id in descending order.
      */
     fun loadAllNotes(): List<NoteListItem>
 }

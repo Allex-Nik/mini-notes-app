@@ -21,9 +21,10 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
         sessionFactory.fromTransaction { session ->
+            val now = Instant.now()
             val note = Note().apply {
-                creationDateTime = Instant.now()
-                lastEditedDateTime = Instant.now()
+                creationDateTime = now
+                lastEditedDateTime = now
                 this.title = title
                 this.text = text
                 removed = false
@@ -65,7 +66,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun deleteNote(id: Long): Unit =
         sessionFactory.inTransaction { session ->
             val affectedInstances = session
-                .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id")
+                .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id AND n.removed = false")
                 .setParameter("id", id)
                 .executeUpdate()
             if (affectedInstances == 0) throw NoteNotDeletedException()
@@ -75,7 +76,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY lastEditedDateTime DESC",
+                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY n.lastEditedDateTime DESC, n.id DESC",
                 NoteListItem::class.java
             )
                 .resultList

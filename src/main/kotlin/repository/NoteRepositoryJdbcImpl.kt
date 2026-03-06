@@ -68,7 +68,7 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
         }
 
     override fun deleteNote(id: Long): Unit =
-        conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
+        conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ? AND removed = false").use { stmt ->
             stmt.setLong(1, id)
             val affectedInstances = stmt.executeUpdate()
             if (affectedInstances == 0) throw NoteNotDeletedException()
@@ -76,7 +76,7 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
         }
 
     override fun loadAllNotes(): List<NoteListItem> =
-        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC;")
+        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC, id DESC;")
             .use { res ->
                 val noteListItems = mutableListOf<NoteListItem>()
                 while (res.next()) {
