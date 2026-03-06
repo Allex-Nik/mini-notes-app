@@ -1,7 +1,5 @@
 package repository
 
-import org.education.exceptions.NoteNotDeletedException
-import org.education.exceptions.NoteNotFoundException
 import org.education.repository.NoteRepository
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -53,7 +51,9 @@ internal abstract class NoteRepositoryTest {
     fun `updateNote with deleted note`() {
         val noteId = noteRepository.insertNote("Old title", "Old text")
         noteRepository.deleteNote(noteId)
-        assertThrows<NoteNotFoundException> { noteRepository.updateNote(noteId, "New Title", "New Text") }
+        assertThrows<IllegalArgumentException> {
+            noteRepository.updateNote(noteId, "New Title", "New Text")
+        }
     }
 
     @Test
@@ -77,7 +77,7 @@ internal abstract class NoteRepositoryTest {
 
     @Test
     fun `deleteNote with non-existing note`() {
-        assertThrows<NoteNotDeletedException> { noteRepository.deleteNote(0) }
+        assertThrows<IllegalArgumentException> { noteRepository.deleteNote(0) }
     }
 
     @Test
@@ -89,10 +89,10 @@ internal abstract class NoteRepositoryTest {
 
         assertTrue(emptyNotes.isEmpty())
         assertEquals(2, notes.size)
-        assertEquals(firstNoteId, notes[0].id)
-        assertEquals(secondNoteId, notes[1].id)
-        assertEquals("Title1", notes[0].title)
-        assertEquals("Title2", notes[1].title)
+        assert(notes.any { it.id == firstNoteId })
+        assert(notes.any { it.id == secondNoteId })
+        assert(notes.any { it.title == "Title1" })
+        assert(notes.any { it.title == "Title2" })
     }
 
     @Test

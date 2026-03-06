@@ -1,6 +1,5 @@
 package org.education.repository
 
-import org.education.exceptions.*
 import org.education.model.NoteListItem
 
 /**
@@ -15,7 +14,7 @@ internal interface NoteRepository {
      * @param title name of the note to create.
      * @param text text (content) of the note to create.
      *
-     * @throws NoteNotInsertedException if the note was not inserted into the database and its ID is not returned.
+     * @throws IllegalStateException if the note was not inserted into the database and its ID is not returned.
      * @return the ID of the inserted note.
      */
     fun insertNote(title: String, text: String): Long
@@ -28,8 +27,7 @@ internal interface NoteRepository {
      * @param title new name of the note.
      * @param text new text (content) of the note.
      *
-     * @throws NoteNotFoundException if no note was updated.
-     * @throws MultipleRowsAffectedException if there was an attempt to update multiple notes.
+     * @throws IllegalArgumentException if the number of rows affected by the update is not 1.
      */
     fun updateNote(id: Long, title: String, text: String)
 
@@ -38,8 +36,7 @@ internal interface NoteRepository {
      *
      * @param id ID of the note to select.
      *
-     * @throws NoteNotFoundException if no note with the given [id] was found.
-     * @throws NonUniqueNoteException if multiple notes with the given [id] were found.
+     * @throws IllegalArgumentException if the number of rows with the given [id] is not 1.
      *
      * @return text of the selected note.
      */
@@ -50,15 +47,16 @@ internal interface NoteRepository {
      *
      * @param id ID of the note to delete.
      *
-     * @throws NoteNotDeletedException if no note was deleted.
-     * @throws MultipleRowsAffectedException if there was an attempt to delete multiple notes.
+     * @throws IllegalArgumentException if the number of rows affected by the deletion is not 1.
      */
     fun deleteNote(id: Long)
 
     /**
      * Returns a list of all notes in the database without their texts. Removed notes are not returned.
+     * The resulting list is sorted by the lastEditedDateTime in descending order and by id in descending order.
      *
-     * @return list of all notes without their texts.
+     * @return list of all notes without their texts,
+     * sorted by lastEditedDateTime in descending order and by id in descending order.
      */
     fun loadAllNotes(): List<NoteListItem>
 }

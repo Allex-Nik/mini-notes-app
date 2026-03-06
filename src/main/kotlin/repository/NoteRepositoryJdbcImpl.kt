@@ -1,10 +1,5 @@
 package org.education.repository
 
-import org.education.exceptions.MultipleRowsAffectedException
-import org.education.exceptions.NonUniqueNoteException
-import org.education.exceptions.NoteNotDeletedException
-import org.education.exceptions.NoteNotFoundException
-import org.education.exceptions.NoteNotInsertedException
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.model.NoteListItem
 import java.sql.Connection
@@ -38,9 +33,10 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
             stmt.setString(4, text)
             stmt.setBoolean(5, false)
             stmt.executeUpdate()
-            stmt.generatedKeys.use { keys ->
-                if (keys.next()) keys.getLong(1) else throw NoteNotInsertedException()
+            val noteId = stmt.generatedKeys.use { keys ->
+                if (keys.next()) keys.getLong(1) else null
             }
+            checkNotNull(noteId) { "Expected to insert a note and get its id, but got null" }
         }
 
     override fun updateNote(id: Long, title: String, text: String) {
@@ -51,8 +47,9 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
                 stmt.setString(3, text)
                 stmt.setLong(4, id)
                 val affectedInstances = stmt.executeUpdate()
-                if (affectedInstances == 0) throw NoteNotFoundException()
-                if (affectedInstances > 1) throw MultipleRowsAffectedException()
+                require(affectedInstances == 1) {
+                    "Expected to update exactly 1 note with id=$id, but tried to update $affectedInstances notes"
+                }
             }
     }
 
@@ -60,23 +57,28 @@ internal class NoteRepositoryJdbcImpl(ds: DataSource) : NoteRepository {
         conn.prepareStatement("SELECT text FROM notes WHERE id = ? AND removed = false").use { stmt ->
             stmt.setLong(1, id)
             return stmt.executeQuery().use { res ->
-                if (!res.next()) throw NoteNotFoundException()
-                val noteText = res.getString("text")
-                if (res.next()) throw NonUniqueNoteException()
-                noteText
+                val results = mutableListOf<String>()
+                while (res.next()) {
+                    results.add(res.getString("text"))
+                }
+                require(results.size == 1) {
+                    "Expected to find exactly 1 note with id=$id, but found ${results.size} notes"
+                }
+                results.first()
             }
         }
 
     override fun deleteNote(id: Long): Unit =
-        conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ?").use { stmt ->
+        conn.prepareStatement("UPDATE notes SET removed = true WHERE id = ? AND removed = false").use { stmt ->
             stmt.setLong(1, id)
             val affectedInstances = stmt.executeUpdate()
-            if (affectedInstances == 0) throw NoteNotDeletedException()
-            if (affectedInstances > 1) throw MultipleRowsAffectedException()
+            require(affectedInstances == 1) {
+                "Expected to delete exactly 1 note with id=$id, but tried to delete $affectedInstances notes"
+            }
         }
 
     override fun loadAllNotes(): List<NoteListItem> =
-        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC;")
+        stmt.executeQuery("SELECT id, creationDateTime, lastEditedDateTime, title FROM notes WHERE removed = false ORDER BY lastEditedDateTime DESC, id DESC;")
             .use { res ->
                 val noteListItems = mutableListOf<NoteListItem>()
                 while (res.next()) {

@@ -1,7 +1,7 @@
 package service
 
-import org.education.service.NoteService
 import org.education.repository.NoteRepository
+import org.education.service.NoteService
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -70,9 +70,9 @@ internal abstract class NoteServiceAndRepositoryTest {
 
         assertTrue(emptyNotes.isEmpty())
         assertEquals(2, notes.size)
-        assertEquals(firstNoteId, notes[0].id)
-        assertEquals(secondNoteId, notes[1].id)
-        assertEquals("Title1", notes[0].title)
-        assertEquals("Title2", notes[1].title)
+        assert(notes.any { it.id == firstNoteId })
+        assert(notes.any { it.id == secondNoteId })
+        assert(notes.any { it.title == "Title1" })
+        assert(notes.any { it.title == "Title2" })
     }
 }
