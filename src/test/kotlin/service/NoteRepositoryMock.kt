@@ -10,8 +10,6 @@ internal class NoteRepositoryMock : NoteRepository {
     private var nextId = 1L
     private val notes = mutableListOf<Note>()
 
-    override fun createNotesTableIfNotExists() {}
-
     override fun insertNote(title: String, text: String): Long {
         val id = nextId++
         val now = Instant.now()

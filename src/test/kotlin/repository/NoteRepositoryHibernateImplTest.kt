@@ -6,9 +6,11 @@ import org.education.repository.NoteRepositoryHibernateImpl
 import org.hibernate.exception.DataException
 import org.junit.jupiter.api.*
 
+internal const val HIBERNATE_CONFIGURATION_FILE_TEST = "hibernate/hibernate_test.cfg.xml"
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 private class NoteRepositoryHibernateImplTest : NoteRepositoryTest() {
-    override val noteRepository = NoteRepositoryHibernateImpl("hibernate/hibernate_test.cfg.xml")
+    override val noteRepository = NoteRepositoryHibernateImpl(HIBERNATE_CONFIGURATION_FILE_TEST)
 
     @BeforeEach
     override fun emptyNotesTable() {

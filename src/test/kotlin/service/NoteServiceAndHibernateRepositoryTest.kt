@@ -4,9 +4,10 @@ import org.education.service.NoteService
 import org.education.repository.NoteRepositoryHibernateImpl
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
+import repository.HIBERNATE_CONFIGURATION_FILE_TEST
 
 private class NoteServiceAndHibernateRepositoryTest : NoteServiceAndRepositoryTest() {
-    override val noteRepository = NoteRepositoryHibernateImpl("hibernate/hibernate_test.cfg.xml")
+    override val noteRepository = NoteRepositoryHibernateImpl(HIBERNATE_CONFIGURATION_FILE_TEST)
     override val noteService = NoteService(noteRepository)
 
     @BeforeEach

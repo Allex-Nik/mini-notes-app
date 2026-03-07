@@ -7,8 +7,6 @@ import org.education.model.NoteListItem
  * Repository responsible for CRUD operations on notes in a database.
  */
 internal interface NoteRepository {
-    fun createNotesTableIfNotExists() // TODO: move from repository
-
     /**
      * Inserts a new note into the database.
      *

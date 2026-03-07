@@ -1,10 +1,6 @@
 package org.education.repository
 
-import org.education.exceptions.MultipleRowsAffectedException
-import org.education.exceptions.NonUniqueNoteException
-import org.education.exceptions.NoteNotDeletedException
-import org.education.exceptions.NoteNotFoundException
-import org.education.exceptions.NoteNotInsertedException
+import org.education.exceptions.*
 import org.education.model.Note
 import org.education.model.NoteListItem
 import org.hibernate.NonUniqueResultException
@@ -13,10 +9,26 @@ import org.hibernate.cfg.Configuration
 import java.time.Instant
 
 internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepository {
-    val sessionFactory = buildSessionFactory(configurationFile)
+    companion object {
+        private const val UPDATE_NOTE_QUERY = """
+            UPDATE Note n SET n.lastEditedDateTime = :now, n.title = :title, n.text = :text 
+            WHERE n.id = :id AND n.removed = false
+            """
 
-    // done by Hibernate automatically
-    override fun createNotesTableIfNotExists() {}
+        private const val SELECT_NOTE_QUERY = "SELECT n.text FROM Note n WHERE n.id = :id AND n.removed = false"
+
+        private const val DELETE_NOTE_QUERY =
+            "UPDATE Note n SET n.removed = true WHERE n.id = :id AND n.removed = false"
+
+        private const val LOAD_ALL_NOTES_QUERY = """
+            SELECT new org.education.model.NoteListItem(n.id, n.title) 
+            FROM Note n 
+            WHERE n.removed = false 
+            ORDER BY n.lastEditedDateTime DESC, n.id DESC
+            """
+    }
+
+    val sessionFactory = buildSessionFactory(configurationFile)
 
     // https://docs.hibernate.org/orm/7.2/introduction/html_single/#managing-transactions
     override fun insertNote(title: String, text: String): Long =
@@ -36,7 +48,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun updateNote(id: Long, title: String, text: String) =
         sessionFactory.inTransaction { session ->
             val affectedInstances = session.createMutationQuery(
-                "UPDATE Note n SET n.lastEditedDateTime = :now, n.title = :title, n.text = :text WHERE n.id = :id AND n.removed = false"
+                UPDATE_NOTE_QUERY
             )
                 .setParameter("now", Instant.now())
                 .setParameter("title", title)
@@ -51,7 +63,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
         sessionFactory.fromTransaction { session ->
             try {
                 session.createQuery(
-                    "SELECT n.text FROM Note n WHERE n.id = :id AND n.removed = false",
+                    SELECT_NOTE_QUERY,
                     String::class.java
                 )
                     .setParameter("id", id)
@@ -66,7 +78,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun deleteNote(id: Long): Unit =
         sessionFactory.inTransaction { session ->
             val affectedInstances = session
-                .createMutationQuery("UPDATE Note n SET n.removed = true WHERE n.id = :id AND n.removed = false")
+                .createMutationQuery(DELETE_NOTE_QUERY)
                 .setParameter("id", id)
                 .executeUpdate()
             if (affectedInstances == 0) throw NoteNotDeletedException()
@@ -76,7 +88,7 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
     override fun loadAllNotes(): List<NoteListItem> =
         sessionFactory.fromTransaction { session ->
             session.createQuery(
-                "SELECT new org.education.model.NoteListItem(n.id, n.title) FROM Note n WHERE n.removed = false ORDER BY n.lastEditedDateTime DESC, n.id DESC",
+                LOAD_ALL_NOTES_QUERY,
                 NoteListItem::class.java
             )
                 .resultList

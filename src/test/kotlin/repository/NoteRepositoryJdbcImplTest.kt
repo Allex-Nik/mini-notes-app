@@ -4,6 +4,7 @@ import com.mysql.cj.jdbc.MysqlDataSource
 import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.repository.NoteRepositoryJdbcImpl
+import org.education.schema.SchemaInitializerJdbc
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -19,17 +20,17 @@ private class NoteRepositoryJdbcImplTest : NoteRepositoryTest() {
             description = "Testing Database"
         }
     override val noteRepository = NoteRepositoryJdbcImpl(dataSource)
+    private val schemaInitializer = SchemaInitializerJdbc(dataSource)
 
     @BeforeEach
     override fun emptyNotesTable() {
-        noteRepository.dropNotesTable()
-        noteRepository.createNotesTableIfNotExists()
+        schemaInitializer.dropNotesTableIfExists()
+        schemaInitializer.createNotesTableIfNotExists()
     }
 
+    // it is closed in every method where it is open
     @AfterAll
-    override fun closeConnection() {
-        noteRepository.conn.close()
-    }
+    override fun closeConnection() {}
 
     @Test
     override fun `insert note with too long title`() {

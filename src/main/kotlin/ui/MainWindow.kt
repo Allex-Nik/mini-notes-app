@@ -54,7 +54,6 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
     private var isAdjustingSelection = false
 
     init {
-        noteService.createNotesTableIfNotExists()
         configureFrame()
         configureLeftPanel()
         configureTextArea()
