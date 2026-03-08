@@ -21,7 +21,7 @@ class Note {
     var lastEditedDateTime: Instant = Instant.now()
 
     @field:Length(max = NOTE_TITLE_MAX_LENGTH)
-    @Column(nullable = false)
+    @Column(nullable = false, length = NOTE_TITLE_MAX_LENGTH)
     var title: String = ""
 
     // @Lob doesn't work correctly here: Hibernate consistently maps it to TINYTEXT,

@@ -6,12 +6,12 @@ import javax.sql.DataSource
 class SchemaInitializerJdbc(private val ds: DataSource) {
     private val createNotesTableQuery = """
         CREATE TABLE IF NOT EXISTS notes (
-        id SERIAL PRIMARY KEY, 
-        creationDateTime DATETIME(6), 
-        lastEditedDateTime DATETIME(6), 
-        title VARCHAR($NOTE_TITLE_MAX_LENGTH), 
-        text TEXT, 
-        removed BIT(1) DEFAULT 0
+        id BIGINT AUTO_INCREMENT PRIMARY KEY, 
+        creationDateTime DATETIME(6) NOT NULL, 
+        lastEditedDateTime DATETIME(6) NOT NULL, 
+        title VARCHAR($NOTE_TITLE_MAX_LENGTH) NOT NULL, 
+        text TEXT NOT NULL, 
+        removed BIT(1) NOT NULL DEFAULT 0
         );
         """.trimIndent()
 
