@@ -168,8 +168,11 @@ internal class NoteRepositoryJdbcImpl(private val ds: DataSource) : NoteReposito
             val initialAutoCommit = conn.autoCommit
             try {
                 conn.autoCommit = false
-                val noteListItems = conn.createStatement().use { stmt ->
-                    stmt.executeQuery(LOAD_ALL_NOTES_QUERY).use { res ->
+                // If you want to execute a Statement object many times,
+                // it usually reduces execution time to use a PreparedStatement object instead.
+                // https://docs.oracle.com/javase/tutorial/jdbc/basics/prepared.html
+                val noteListItems = conn.prepareStatement(LOAD_ALL_NOTES_QUERY).use { stmt ->
+                    stmt.executeQuery().use { res ->
                         val noteListItems = mutableListOf<NoteListItem>()
                         while (res.next()) {
                             noteListItems.add(
