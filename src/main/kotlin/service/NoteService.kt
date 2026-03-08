@@ -5,7 +5,9 @@ import org.education.exceptions.BlankNoteNameException
 import org.education.exceptions.HeaderTooLongException
 import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
-import org.education.ui.UIText
+
+internal const val START_HEADER_TEXT = "Add your header here"
+internal const val EMPTY_NOTE_TITLE = "empty_note"
 
 internal class NoteService(private val noteRepository: NoteRepository) {
     /**
@@ -13,7 +15,7 @@ internal class NoteService(private val noteRepository: NoteRepository) {
      * If the [header] is not default and not empty, the name of the note is the [header].
      * Otherwise, the name of the note is the first [NOTE_TITLE_MAX_LENGTH] characters of the first word in the note.
      * If the [text] of the note is empty (and the [header] is empty or default),
-     * the note is called [UIText.EMPTY_NOTE_TITLE].
+     * the note is called [EMPTY_NOTE_TITLE].
      *
      * @param header header of the note.
      * @param text text of the note.
@@ -26,7 +28,7 @@ internal class NoteService(private val noteRepository: NoteRepository) {
         if (header.length > NOTE_TITLE_MAX_LENGTH)
             throw HeaderTooLongException(NOTE_TITLE_MAX_LENGTH)
 
-        val fileName = if (header != UIText.START_HEADER_TEXT && header.isNotEmpty()) {
+        val fileName = if (header != START_HEADER_TEXT && header.isNotEmpty()) {
             header
         } else {
             // take the first word of the note, remove punctuation
@@ -38,7 +40,7 @@ internal class NoteService(private val noteRepository: NoteRepository) {
             // limit the word to the maximum allowed number of characters
             if (fileName.length > NOTE_TITLE_MAX_LENGTH) fileName = fileName.take(NOTE_TITLE_MAX_LENGTH)
 
-            if (fileName.isEmpty()) fileName = UIText.EMPTY_NOTE_TITLE
+            if (fileName.isEmpty()) fileName = EMPTY_NOTE_TITLE
 
             fileName
         }

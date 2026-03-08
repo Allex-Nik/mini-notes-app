@@ -4,8 +4,8 @@ import org.education.exceptions.BlankNoteNameException
 import org.education.exceptions.HeaderTooLongException
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.service.NoteService
-import org.education.ui.UIText.EMPTY_NOTE_TITLE
-import org.education.ui.UIText.START_HEADER_TEXT
+import org.education.service.EMPTY_NOTE_TITLE
+import org.education.service.START_HEADER_TEXT
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

@@ -1,8 +1,6 @@
 package org.education.ui
 
 internal object UIText {
-    const val EMPTY_NOTE_TITLE = "empty_note"
-
     const val FRAME_TITLE = "Notes"
     const val SAVE_BUTTON_TITLE = "Save"
     const val LOAD_BUTTON_TITLE = "Load"
@@ -23,7 +21,6 @@ internal object UIText {
     const val HEADER_ERROR_TITLE = "Too long header error"
     const val NOTE_NOT_FOUND_TITLE = "Note not found"
     const val NEW_NOTE_TITLE = "New"
-    const val START_HEADER_TEXT = "Add your header here"
 
     const val CONFIRM_SAVE_MESSAGE = "Do you want to save this note?"
     const val CONFIRM_EXIT_MESSAGE = "Are you sure you want to exit?"

@@ -4,6 +4,7 @@ import org.education.exceptions.HeaderTooLongException
 import org.education.exceptions.NoteNotFoundException
 import org.education.model.NoteListItem
 import org.education.service.NoteService
+import org.education.service.START_HEADER_TEXT
 import org.education.ui.UIText.CONFIRM_DELETE_MESSAGE
 import org.education.ui.UIText.CONFIRM_DELETE_NOTE_TITLE
 import org.education.ui.UIText.CONFIRM_EXIT_MESSAGE
@@ -48,7 +49,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
     private var notesJList = JList(listModel)
 
     // current note
-    private val header = JTextField(UIText.START_HEADER_TEXT)
+    private val header = JTextField(START_HEADER_TEXT)
     private val textArea = JTextArea()
     private var currentNoteId: Long? = null
     private var isAdjustingSelection = false
@@ -199,7 +200,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
                     }
                 }
                 currentNoteId = null
-                header.text = UIText.START_HEADER_TEXT
+                header.text = START_HEADER_TEXT
                 textArea.text = ""
                 notesJList.clearSelection()
                 statusLabel.text = UIText.NOTE_CREATED_MESSAGE
@@ -324,7 +325,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         currentNoteId = null
         statusLabel.text = UIText.noteDeleted(selectedNote.title)
         textArea.text = ""
-        header.text = UIText.START_HEADER_TEXT
+        header.text = START_HEADER_TEXT
         readNotes() // heavy operation, better to avoid
     }
 
@@ -346,7 +347,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             textArea.text = noteService.selectNote(selectedNote.id)
         } catch (ex: NoteNotFoundException) {
             handleNoteNotFound(ex.message ?: "Note not found")
-            header.text = UIText.START_HEADER_TEXT
+            header.text = START_HEADER_TEXT
             textArea.text = ""
         }
         restoreSelection()
@@ -371,7 +372,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         val currentText = textArea.text
         // new note case
         if (currentNoteId == null) {
-            return currentText.isNotEmpty() || (header.text != UIText.START_HEADER_TEXT && header.text.isNotEmpty())
+            return currentText.isNotEmpty() || (header.text != START_HEADER_TEXT && header.text.isNotEmpty())
         }
         // existing note case
         val savedText = try {
