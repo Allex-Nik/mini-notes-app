@@ -28,23 +28,15 @@ internal class NoteService(private val noteRepository: NoteRepository) {
         if (header.length > NOTE_TITLE_MAX_LENGTH)
             throw HeaderTooLongException(NOTE_TITLE_MAX_LENGTH)
 
-        val fileName = if (header != START_HEADER_TEXT && header.isNotEmpty()) {
-            header
-        } else {
-            // take the first word of the note, remove punctuation
-            val note = text
-            var fileName = note
-                .substringBefore(' ')
-                .trim { !it.isLetterOrDigit() }
-
-            // limit the word to the maximum allowed number of characters
-            if (fileName.length > NOTE_TITLE_MAX_LENGTH) fileName = fileName.take(NOTE_TITLE_MAX_LENGTH)
-
-            if (fileName.isEmpty()) fileName = EMPTY_NOTE_TITLE
-
-            fileName
+        if (header != START_HEADER_TEXT && header.isNotEmpty()) {
+            return header
         }
-        return fileName
+
+        return text
+            .substringBefore(' ')
+            .trim { !it.isLetterOrDigit() }
+            .take(NOTE_TITLE_MAX_LENGTH)
+            .ifEmpty { EMPTY_NOTE_TITLE }
     }
 
     /**
