@@ -14,6 +14,7 @@ import org.education.ui.UIText.EXIT_TITLE
 import java.awt.BorderLayout
 import java.awt.Image
 import java.awt.Taskbar
+import java.awt.Toolkit
 import java.awt.event.KeyEvent
 import javax.swing.*
 import javax.swing.text.AbstractDocument
@@ -165,7 +166,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             background = Theme.textAreaColor
         }
         val document = header.document as AbstractDocument
-        document.documentFilter = HeaderLengthFilter()
+        document.documentFilter = HeaderLengthFilter { Toolkit.getDefaultToolkit().beep() }
 
         val textScrollPane = JScrollPane(textArea)
         centralPanel.apply {
