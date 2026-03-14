@@ -243,7 +243,9 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     private fun handleExit() {
         if (!confirmedAction(CONFIRM_EXIT_MESSAGE, EXIT_TITLE)) return
-        if (!autosaveCheckbox.isSelected) return
+        if (!autosaveCheckbox.isSelected) {
+            exitProcess(0)
+        }
         val noteSaved = saveNote()
         if (!noteSaved) return
         exitProcess(0)
@@ -257,10 +259,9 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
     }
 
     private fun addSaveButtonListener() = saveButton.addActionListener {
-        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-            saveNote()
-            restoreSelection()
-        }
+        if (!confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) return@addActionListener
+        saveNote()
+        restoreSelection()
     }
 
     private fun saveNote(): Boolean {
@@ -285,15 +286,15 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
     private fun restoreSelection() {
         val id = currentNoteId ?: return
         val noteIndexToSelect = (0 until listModel.size).indexOfFirst { listModel[it].id == id }
-        if (noteIndexToSelect >= 0) {
-            isAdjustingSelection = true
-            notesJList.selectedIndex = noteIndexToSelect
-            isAdjustingSelection = false
-            notesJList.ensureIndexIsVisible(noteIndexToSelect)
-        } else {
+        if (noteIndexToSelect < 0) {
             currentNoteId = null
             notesJList.clearSelection()
+            return
         }
+        isAdjustingSelection = true
+        notesJList.selectedIndex = noteIndexToSelect
+        isAdjustingSelection = false
+        notesJList.ensureIndexIsVisible(noteIndexToSelect)
     }
 
     private fun confirmedAction(message: String, title: String): Boolean {
