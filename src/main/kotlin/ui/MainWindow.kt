@@ -46,7 +46,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     // list of notes
     private val listModel = DefaultListModel<NoteListItem>()
-    private var notesJList = JList(listModel)
+    private val notesJList = JList(listModel)
 
     // current note
     private val header = JTextField(START_HEADER_TEXT)
@@ -164,8 +164,8 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             horizontalAlignment = JTextField.CENTER
             background = Theme.textAreaColor
         }
-        val document = header.document as AbstractDocument
-        document.documentFilter = HeaderLengthFilter { Toolkit.getDefaultToolkit().beep() }
+
+        configureHeaderLengthFilter()
 
         val textScrollPane = JScrollPane(textArea)
         centralPanel.apply {
@@ -174,6 +174,11 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             add(textScrollPane, BorderLayout.CENTER)
         }
         this.add(centralPanel, BorderLayout.CENTER)
+    }
+
+    private fun configureHeaderLengthFilter() {
+        val document = header.document as AbstractDocument
+        document.documentFilter = HeaderLengthFilter { Toolkit.getDefaultToolkit().beep() }
     }
 
     private fun configureMenuBar() {
@@ -258,11 +263,13 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         addNotesSelectionListener()
     }
 
-    private fun addSaveButtonListener() = saveButton.addActionListener {
-        if (!confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) return@addActionListener
-        saveNote()
-        restoreSelection()
-    }
+    private fun addSaveButtonListener() = saveButton.addActionListener { handleSave() }
+
+    private fun addLoadButtonListener() = loadButton.addActionListener { handleLoadNotes() }
+
+    private fun addRemoveButtonListener() = removeButton.addActionListener { handleRemoveNote() }
+
+    private fun addNotesSelectionListener() = notesJList.addListSelectionListener { handleNoteSelectionChanged() }
 
     private fun saveNote(): Boolean {
         val noteText = textArea.text
@@ -316,16 +323,16 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         )
     }
 
-    private fun addLoadButtonListener() = loadButton.addActionListener {
+    private fun handleLoadNotes() {
         readNotes()
         // if currentNoteId != null, selection restored. If it is null, this step is skipped.
         restoreSelection()
         statusLabel.text = UIText.NOTES_UPDATED_MESSAGE
     }
 
-    private fun addRemoveButtonListener() = removeButton.addActionListener {
-        if (notesJList.isSelectionEmpty) return@addActionListener
-        if (!confirmedAction(CONFIRM_DELETE_MESSAGE, CONFIRM_DELETE_NOTE_TITLE)) return@addActionListener
+    private fun handleRemoveNote() {
+        if (notesJList.isSelectionEmpty) return
+        if (!confirmedAction(CONFIRM_DELETE_MESSAGE, CONFIRM_DELETE_NOTE_TITLE)) return
         removeNote()
     }
 
@@ -357,16 +364,21 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     // `isAdjustingSelection` flag is used to prevent calling this selection listener
     // when selection is changed due to automatic updates, and not when the user intentionally selects a different note
-    private fun addNotesSelectionListener() = notesJList.addListSelectionListener {
-        if (isAdjustingSelection || notesJList.isSelectionEmpty) return@addListSelectionListener
+    private fun handleNoteSelectionChanged() {
+        if (isAdjustingSelection || notesJList.isSelectionEmpty) return
         val selectedNote = notesJList.selectedValue
         if (isNoteChanged()) {
             if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
                 // if the note is expected to be saved, but it wasn't, keep selection in order not to lose the text
                 val noteSaved = saveNote()
-                if (!noteSaved) return@addListSelectionListener
+                if (!noteSaved) return
             }
         }
+        loadSelectedNote(selectedNote)
+        restoreSelection()
+    }
+
+    private fun loadSelectedNote(selectedNote: NoteListItem) {
         try {
             val loadedNote = noteService.selectNote(selectedNote.id)
             header.text = loadedNote.title
@@ -377,7 +389,6 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             header.text = START_HEADER_TEXT
             textArea.text = ""
         }
-        restoreSelection()
     }
 
     private fun handleNoteNotFound(message: String) {
