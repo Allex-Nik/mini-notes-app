@@ -1,8 +1,6 @@
 package org.education.ui
 
-import org.education.exceptions.HeaderTooLongException
-import org.education.exceptions.NoteNotFoundException
-import org.education.exceptions.UnexpectedCurrentNoteId
+import org.education.exceptions.*
 import org.education.model.NoteListItem
 import org.education.service.NoteService
 import org.education.service.START_HEADER_TEXT
@@ -323,12 +321,28 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     private fun removeNote() {
         val selectedNote = notesJList.selectedValue
-        noteService.deleteNote(selectedNote.id)
-        currentNoteId = null
-        statusLabel.text = UIText.noteDeleted(selectedNote.title)
-        textArea.text = ""
-        header.text = START_HEADER_TEXT
-        readNotes() // heavy operation, better to avoid
+        try {
+            noteService.deleteNote(selectedNote.id)
+            currentNoteId = null
+            statusLabel.text = UIText.noteDeleted(selectedNote.title)
+            textArea.text = ""
+            header.text = START_HEADER_TEXT
+            readNotes() // heavy operation, better to avoid
+        } catch (ex: NoteNotDeletedException) {
+            notifyAboutError(
+                ex.message ?: "The note could not be deleted",
+                UIText.NOTE_NOT_DELETED_TITLE
+            )
+            statusLabel.text = UIText.NOTE_NOT_DELETED_LABEL
+            readNotes()
+        } catch (ex: MultipleRowsAffectedException) {
+            notifyAboutError(
+                ex.message ?: "Attempt to delete multiple rows",
+                UIText.NOTE_NOT_DELETED_TITLE
+            )
+            statusLabel.text = UIText.NOTE_NOT_DELETED_LABEL
+            readNotes()
+        }
     }
 
     // `isAdjustingSelection` flag is used to prevent calling this selection listener
