@@ -3,6 +3,7 @@ package org.education.service
 import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.exceptions.BlankNoteNameException
 import org.education.exceptions.HeaderTooLongException
+import org.education.model.NoteData
 import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
 
@@ -66,7 +67,7 @@ internal class NoteService(private val noteRepository: NoteRepository) {
 
     fun deleteNote(id: Long) = noteRepository.deleteNote(id)
 
-    fun selectNote(id: Long): String = noteRepository.selectNote(id)
+    fun selectNote(id: Long): NoteData = noteRepository.selectNote(id)
 
     fun loadAllNotes(): List<NoteListItem> = noteRepository.loadAllNotes()
 }

@@ -2,6 +2,7 @@ package org.education.repository
 
 import org.education.exceptions.*
 import org.education.model.Note
+import org.education.model.NoteData
 import org.education.model.NoteListItem
 import org.hibernate.NonUniqueResultException
 import org.hibernate.SessionFactory
@@ -15,7 +16,9 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
             WHERE n.id = :id AND n.removed = false
             """
 
-        private const val SELECT_NOTE_QUERY = "SELECT n.text FROM Note n WHERE n.id = :id AND n.removed = false"
+        private const val SELECT_NOTE_QUERY = """
+            SELECT new org.education.model.NoteData(n.title, n.text) FROM Note n WHERE n.id = :id AND n.removed = false
+            """
 
         private const val DELETE_NOTE_QUERY =
             "UPDATE Note n SET n.removed = true WHERE n.id = :id AND n.removed = false"
@@ -59,12 +62,12 @@ internal class NoteRepositoryHibernateImpl(configurationFile: String) : NoteRepo
             if (affectedInstances > 1) throw MultipleRowsAffectedException()
         }
 
-    override fun selectNote(id: Long): String =
+    override fun selectNote(id: Long): NoteData =
         sessionFactory.fromTransaction { session ->
             try {
                 session.createQuery(
                     SELECT_NOTE_QUERY,
-                    String::class.java
+                    NoteData::class.java
                 )
                     .setParameter("id", id)
                     .uniqueResultOptional() // throws NonUniqueResultException if > 1 row is returned

@@ -1,6 +1,7 @@
 package org.education.repository
 
 import org.education.exceptions.*
+import org.education.model.NoteData
 import org.education.model.NoteListItem
 import java.sql.Statement
 import java.sql.Timestamp
@@ -17,7 +18,7 @@ internal class NoteRepositoryJdbcImpl(private val ds: DataSource) : NoteReposito
             UPDATE notes SET lastEditedDateTime = ?, title = ?, text = ? WHERE id = ? AND removed = false;
             """
 
-        private const val SELECT_NOTE_QUERY = "SELECT text FROM notes WHERE id = ? AND removed = false"
+        private const val SELECT_NOTE_QUERY = "SELECT title, text FROM notes WHERE id = ? AND removed = false"
 
         private const val DELETE_NOTE_QUERY = "UPDATE notes SET removed = true WHERE id = ? AND removed = false"
 
@@ -103,22 +104,25 @@ internal class NoteRepositoryJdbcImpl(private val ds: DataSource) : NoteReposito
         }
     }
 
-    override fun selectNote(id: Long): String =
+    override fun selectNote(id: Long): NoteData =
         ds.connection.use { conn ->
             val initialAutoCommit = conn.autoCommit
             try {
                 conn.autoCommit = false
-                val noteText = conn.prepareStatement(SELECT_NOTE_QUERY).use { stmt ->
+                val note = conn.prepareStatement(SELECT_NOTE_QUERY).use { stmt ->
                     stmt.setLong(1, id)
                     stmt.executeQuery().use { res ->
                         if (!res.next()) throw NoteNotFoundException()
-                        val noteText = res.getString("text")
+                        val note = NoteData(
+                            res.getString("title"),
+                            res.getString("text")
+                        )
                         if (res.next()) throw NonUniqueNoteException()
-                        noteText
+                        note
                     }
                 }
                 conn.commit()
-                noteText
+                note
             } catch (exception: Exception) {
                 try {
                     conn.rollback() // still needed to close the transaction in case of exception

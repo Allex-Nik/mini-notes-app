@@ -24,24 +24,20 @@ internal abstract class NoteServiceAndRepositoryTest {
     @Test
     fun `createNote alternative`() {
         val id = noteService.saveNote(null, "Test note", "Test text")
-        val savedNoteText = noteRepository.selectNote(id)
-        val savedNoteTitle = noteRepository.loadAllNotes().find { it.id == id }?.title
-            ?: error("Note with id=$id not found")
+        val savedNote = noteRepository.selectNote(id)
 
-        assertEquals("Test text", savedNoteText)
-        assertEquals("Test note", savedNoteTitle)
+        assertEquals("Test text", savedNote.text)
+        assertEquals("Test note", savedNote.title)
     }
 
     @Test
     fun updateNote() {
         val createdNoteId = noteRepository.insertNote("Old title", "Old text")
         val updatedNoteId = noteService.saveNote(createdNoteId, "Updated title", "Updated text")
-        val updatedNoteText = noteRepository.selectNote(updatedNoteId)
-        val updatedNoteTitle = noteRepository.loadAllNotes().find { it.id == updatedNoteId }?.title
-            ?: error("Note with id=$updatedNoteId not found")
+        val updatedNote = noteRepository.selectNote(updatedNoteId)
 
-        assertEquals("Updated text", updatedNoteText)
-        assertEquals("Updated title", updatedNoteTitle)
+        assertEquals("Updated text", updatedNote.text)
+        assertEquals("Updated title", updatedNote.title)
     }
 
     // good to check the "removed" flag, but NoteRepositoryJdbcImpl doesn't provide API for that
@@ -56,9 +52,10 @@ internal abstract class NoteServiceAndRepositoryTest {
     @Test
     fun selectNote() {
         val noteId = noteRepository.insertNote("Title", "Text")
-        val selectedNoteText = noteService.selectNote(noteId)
+        val selectedNote = noteService.selectNote(noteId)
 
-        assertEquals("Text", selectedNoteText)
+        assertEquals("Text", selectedNote.text)
+        assertEquals("Title", selectedNote.title)
     }
 
     @Test

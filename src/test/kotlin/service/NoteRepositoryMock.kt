@@ -1,6 +1,7 @@
 package service
 
 import org.education.model.Note
+import org.education.model.NoteData
 import org.education.model.NoteListItem
 import org.education.repository.NoteRepository
 import java.time.Instant
@@ -40,11 +41,11 @@ internal class NoteRepositoryMock : NoteRepository {
         notes[listIndex] = updatedNote
     }
 
-    override fun selectNote(id: Long): String {
+    override fun selectNote(id: Long): NoteData {
         val listIndex = (id - 1).toInt()
         val note = notes.getOrNull(listIndex) ?: error("Note with id=$id not found")
         if (note.removed) error("Note with id=$id was already removed")
-        return note.text
+        return NoteData(note.title, note.text)
     }
 
     override fun deleteNote(id: Long) {

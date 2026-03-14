@@ -343,10 +343,11 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
                 if (!noteSaved) return@addListSelectionListener
             }
         }
-        currentNoteId = selectedNote.id
-        header.text = selectedNote.title
         try {
-            textArea.text = noteService.selectNote(selectedNote.id)
+            val loadedNote = noteService.selectNote(selectedNote.id)
+            header.text = loadedNote.title
+            textArea.text = loadedNote.text
+            currentNoteId = selectedNote.id
         } catch (ex: NoteNotFoundException) {
             handleNoteNotFound(ex.message ?: "Note not found")
             header.text = START_HEADER_TEXT
@@ -372,17 +373,18 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     private fun isNoteChanged(): Boolean {
         val currentText = textArea.text
+        val currentHeader = header.text
         // new note case
         if (currentNoteId == null) {
-            return currentText.isNotEmpty() || (header.text != START_HEADER_TEXT && header.text.isNotEmpty())
+            return currentText.isNotEmpty() || (currentHeader != START_HEADER_TEXT && currentHeader.isNotEmpty())
         }
         // existing note case
-        val savedText = try {
+        val savedNoteData = try {
             noteService.selectNote(currentNoteId ?: throw UnexpectedCurrentNoteId())
         } catch (ex: NoteNotFoundException) {
             handleNoteNotFound(ex.message ?: "Note not found")
+            return true
         }
-        return currentText != savedText || header.text != noteService.loadAllNotes()
-            .find { it.id == currentNoteId }?.title // potentially heavy operation
+        return currentText != savedNoteData.text || currentHeader != savedNoteData.title
     }
 }

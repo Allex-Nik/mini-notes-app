@@ -23,12 +23,10 @@ internal abstract class NoteRepositoryTest {
         val text = "Text"
 
         val noteId = noteRepository.insertNote(title, text)
-        val insertedNoteText = noteRepository.selectNote(noteId)
-        val insertedNoteTitle = noteRepository.loadAllNotes().find { it.id == noteId }?.title
-            ?: error("Note with id=$noteId not found")
+        val insertedNote = noteRepository.selectNote(noteId)
 
-        assertEquals(text, insertedNoteText)
-        assertEquals(title, insertedNoteTitle)
+        assertEquals(text, insertedNote.text)
+        assertEquals(title, insertedNote.title)
     }
 
     @Test
@@ -38,12 +36,10 @@ internal abstract class NoteRepositoryTest {
     fun updateNote() {
         val noteId = noteRepository.insertNote("Old title", "Old text")
         noteRepository.updateNote(noteId, "New Title", "New Text")
-        val updatedNoteText = noteRepository.selectNote(noteId)
-        val updatedNoteTitle = noteRepository.loadAllNotes().find { it.id == noteId }?.title
-            ?: error("Note with id=$noteId not found")
+        val updatedNote = noteRepository.selectNote(noteId)
 
-        assertEquals("New Text", updatedNoteText)
-        assertEquals("New Title", updatedNoteTitle)
+        assertEquals("New Text", updatedNote.text)
+        assertEquals("New Title", updatedNote.title)
     }
 
     @Test
@@ -59,9 +55,10 @@ internal abstract class NoteRepositoryTest {
     @Test
     fun selectNote() {
         val noteId = noteRepository.insertNote("Title", "Text to select")
-        val selectedNoteText = noteRepository.selectNote(noteId)
+        val selectedNote = noteRepository.selectNote(noteId)
 
-        assertEquals("Text to select", selectedNoteText)
+        assertEquals("Text to select", selectedNote.text)
+        assertEquals("Title", selectedNote.title)
     }
 
     @Test

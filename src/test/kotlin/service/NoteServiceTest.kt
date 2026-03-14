@@ -100,12 +100,10 @@ private class NoteServiceTest {
 
         // could also make noteRepository.notes public, retrieve the whole note and also compare title and "removed"
         // here we assume that noteRepository methods are correct
-        val savedNoteText = noteRepository.selectNote(savedNoteId) // only returns text of the note
-        val savedNote = noteRepository.loadAllNotes().find { it.id == savedNoteId } // doesn't contain note text
-            ?: error("Note with id=$savedNoteId not found")
+        val savedNote = noteRepository.selectNote(savedNoteId) // only returns text of the note
 
         assertEquals(repoSizeBefore + 1, repoSizeAfter)
-        assertEquals(noteText, savedNoteText)
+        assertEquals(noteText, savedNote.text)
         assertEquals(noteName, savedNote.title)
     }
 
@@ -154,13 +152,11 @@ private class NoteServiceTest {
         val updatedNoteId = noteService.saveNote(noteToUpdateId, "New title", "New text")
 
         val repoSizeAfterUpdate = noteRepository.size()
-        val updatedNoteText = noteRepository.selectNote(updatedNoteId)
-        val updatedNote = noteRepository.loadAllNotes().find { it.id == updatedNoteId }
-            ?: error("Note with id=$updatedNoteId not found")
+        val updatedNote = noteRepository.selectNote(updatedNoteId)
 
         assertEquals(repoSizeBeforeUpdate, repoSizeAfterUpdate)
         assertEquals(noteToUpdateId, updatedNoteId)
-        assertEquals("New text", updatedNoteText)
+        assertEquals("New text", updatedNote.text)
         assertEquals("New title", updatedNote.title)
     }
 

@@ -1,6 +1,7 @@
 package org.education.repository
 
 import org.education.exceptions.*
+import org.education.model.NoteData
 import org.education.model.NoteListItem
 
 /**
@@ -32,16 +33,16 @@ internal interface NoteRepository {
     fun updateNote(id: Long, title: String, text: String)
 
     /**
-     * Returns the text of the note with the given [id].
+     * Returns the title and text of the note with the given [id].
      *
      * @param id ID of the note to select.
      *
      * @throws NoteNotFoundException if no note with the given [id] was found.
      * @throws NonUniqueNoteException if multiple notes with the given [id] were found.
      *
-     * @return text of the selected note.
+     * @return title and text of the selected note.
      */
-    fun selectNote(id: Long): String
+    fun selectNote(id: Long): NoteData
 
     /**
      * Marks the note with the given [id] in the database as removed. Changes exactly one row in the database.
