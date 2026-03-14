@@ -2,6 +2,7 @@ package org.education.ui
 
 import org.education.exceptions.HeaderTooLongException
 import org.education.exceptions.NoteNotFoundException
+import org.education.exceptions.UnexpectedCurrentNoteId
 import org.education.model.NoteListItem
 import org.education.service.NoteService
 import org.education.service.START_HEADER_TEXT
@@ -377,7 +378,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         }
         // existing note case
         val savedText = try {
-            noteService.selectNote(currentNoteId!!)
+            noteService.selectNote(currentNoteId ?: throw UnexpectedCurrentNoteId())
         } catch (ex: NoteNotFoundException) {
             handleNoteNotFound(ex.message ?: "Note not found")
         }
