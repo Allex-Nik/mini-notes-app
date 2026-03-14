@@ -1,5 +1,5 @@
 package org.education.exceptions
 
-class NoteNotDeletedException(
+internal class NoteNotDeletedException(
     message: String = "Note was not deleted"
 ) : RuntimeException(message)
