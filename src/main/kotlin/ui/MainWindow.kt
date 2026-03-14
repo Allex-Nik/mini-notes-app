@@ -191,20 +191,7 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
                 .getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
             icon = ImageIcon(newNoteImageScaled)
 
-            addActionListener {
-                // save/ask only if there are changes in the note
-                if (isNoteChanged()) {
-                    // if the checkbox is selected, the confirmedAction() is not evaluated and the dialog is not shown
-                    if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-                        saveNote()
-                    }
-                }
-                currentNoteId = null
-                header.text = START_HEADER_TEXT
-                textArea.text = ""
-                notesJList.clearSelection()
-                statusLabel.text = UIText.NOTE_CREATED_MESSAGE
-            }
+            addActionListener { handleNewNote() }
         }
 
         // save note menu item
@@ -212,23 +199,14 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
         val saveNoteItem = JMenuItem(UIText.SAVE_TITLE, ImageIcon(saveNotePic))
         saveNoteItem.accelerator = saveShortcut
-        saveNoteItem.addActionListener {
-            if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-                saveNote()
-                restoreSelection()
-            }
-        }
+        saveNoteItem.addActionListener { handleSave() }
 
         // exit menu item
         val exitPic = ImageIcon(this.javaClass.getResource(Icons.EXIT_ICON))
             .image.getScaledInstance(Theme.MENU_ICON_WIDTH, Theme.MENU_ICON_HEIGHT, Image.SCALE_SMOOTH)
         val exitItem = JMenuItem(EXIT_TITLE, ImageIcon(exitPic))
         exitItem.accelerator = exitShortcut
-        exitItem.addActionListener {
-            if (!confirmedAction(CONFIRM_EXIT_MESSAGE, EXIT_TITLE)) return@addActionListener
-            if (autosaveCheckbox.isSelected) saveNote()
-            exitProcess(0)
-        }
+        exitItem.addActionListener { handleExit() }
 
         menu.add(newNoteItem)
         menu.add(saveNoteItem)
@@ -239,6 +217,38 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
         menuBar.add(menuAutosave)
 
         this.jMenuBar = menuBar
+    }
+
+    private fun handleNewNote() {
+        // save/ask only if there are changes in the note
+        if (isNoteChanged()) {
+            // if the checkbox is selected, the confirmedAction() is not evaluated and the dialog is not shown
+            if (autosaveCheckbox.isSelected || confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+                val noteSaved = saveNote()
+                if (!noteSaved) return
+            }
+        }
+        currentNoteId = null
+        header.text = START_HEADER_TEXT
+        textArea.text = ""
+        notesJList.clearSelection()
+        statusLabel.text = UIText.NOTE_CREATED_MESSAGE
+    }
+
+    private fun handleSave() {
+        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
+            saveNote()
+            restoreSelection()
+        }
+    }
+
+    private fun handleExit() {
+        if (!confirmedAction(CONFIRM_EXIT_MESSAGE, EXIT_TITLE)) return
+        if (autosaveCheckbox.isSelected) {
+            val noteSaved = saveNote()
+            if (!noteSaved) return
+        }
+        exitProcess(0)
     }
 
     private fun addListeners() {
