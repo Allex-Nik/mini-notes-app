@@ -236,18 +236,16 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
     }
 
     private fun handleSave() {
-        if (confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) {
-            saveNote()
-            restoreSelection()
-        }
+        if (!confirmedAction(CONFIRM_SAVE_MESSAGE, CONFIRM_SAVE_NOTE_TITLE)) return
+        saveNote()
+        restoreSelection()
     }
 
     private fun handleExit() {
         if (!confirmedAction(CONFIRM_EXIT_MESSAGE, EXIT_TITLE)) return
-        if (autosaveCheckbox.isSelected) {
-            val noteSaved = saveNote()
-            if (!noteSaved) return
-        }
+        if (!autosaveCheckbox.isSelected) return
+        val noteSaved = saveNote()
+        if (!noteSaved) return
         exitProcess(0)
     }
 
@@ -326,7 +324,8 @@ internal class MainWindow(private val noteService: NoteService) : JFrame() {
 
     private fun addRemoveButtonListener() = removeButton.addActionListener {
         if (notesJList.isSelectionEmpty) return@addActionListener
-        if (confirmedAction(CONFIRM_DELETE_MESSAGE, CONFIRM_DELETE_NOTE_TITLE)) removeNote()
+        if (!confirmedAction(CONFIRM_DELETE_MESSAGE, CONFIRM_DELETE_NOTE_TITLE)) return@addActionListener
+        removeNote()
     }
 
     private fun removeNote() {
