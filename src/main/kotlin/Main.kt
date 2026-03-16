@@ -1,10 +1,19 @@
 package org.education
 
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.application
 import com.mysql.cj.jdbc.MysqlDataSource
+import org.education.mini_notes_app.generated.resources.Res
+import org.education.mini_notes_app.generated.resources.app_icon
+import org.jetbrains.compose.resources.painterResource
 import org.education.repository.NoteRepositoryHibernateImpl
 import org.education.service.NoteService
-import org.education.ui.MainWindow
-import javax.swing.SwingUtilities
+import org.education.ui.App
+import org.education.ui.Theme
+import org.education.ui.UIText
 
 private const val HIBERNATE_CONFIGURATION_FILE_PROD = "hibernate/hibernate.cfg.xml"
 
@@ -24,8 +33,14 @@ fun main() {
     // uncomment the line below if the JDBC repository is needed
     // SchemaInitializerJdbc(ds).createNotesTableIfNotExists()
 
-    SwingUtilities.invokeLater {
-        val frame = MainWindow(noteService)
-        frame.isVisible = true
+    application {
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = UIText.FRAME_TITLE,
+            icon = painterResource(Res.drawable.app_icon),
+            state = WindowState(size = DpSize(Theme.FRAME_WIDTH.dp, Theme.FRAME_HEIGHT.dp))
+        ) {
+            App(noteService = noteService, onExit = ::exitApplication)
+        }
     }
 }
