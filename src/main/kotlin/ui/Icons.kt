@@ -5,8 +5,8 @@ import javax.imageio.ImageIO
 
 internal object Icons {
     const val APP_ICON = "/app_icon.png"
-    const val NEW_NOTE_ICON = "/new-note.jpeg"
-    const val SAVE_NOTE_ICON = "/save-note.jpeg"
+    const val NEW_NOTE_ICON = "/new_note.jpeg"
+    const val SAVE_NOTE_ICON = "/save_note.jpeg"
     const val EXIT_ICON = "/exit.jpeg"
 
     fun installMacDockIcon() {

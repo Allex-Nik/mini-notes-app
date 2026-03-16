@@ -8,12 +8,12 @@ import androidx.compose.ui.window.application
 import com.mysql.cj.jdbc.MysqlDataSource
 import org.education.mini_notes_app.generated.resources.Res
 import org.education.mini_notes_app.generated.resources.app_icon
-import org.jetbrains.compose.resources.painterResource
 import org.education.repository.NoteRepositoryHibernateImpl
 import org.education.service.NoteService
 import org.education.ui.App
 import org.education.ui.Theme
 import org.education.ui.UIText
+import org.jetbrains.compose.resources.painterResource
 
 private const val HIBERNATE_CONFIGURATION_FILE_PROD = "hibernate/hibernate.cfg.xml"
 

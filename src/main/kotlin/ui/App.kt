@@ -1,19 +1,27 @@
 package org.education.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import org.education.exceptions.*
+import org.education.mini_notes_app.generated.resources.Res
+import org.education.mini_notes_app.generated.resources.exit
+import org.education.mini_notes_app.generated.resources.new_note
+import org.education.mini_notes_app.generated.resources.save_note
+import org.education.model.NOTE_TITLE_MAX_LENGTH
 import org.education.model.NoteListItem
 import org.education.service.NoteService
 import org.education.service.START_HEADER_TEXT
@@ -23,6 +31,8 @@ import org.education.ui.UIText.CONFIRM_EXIT_MESSAGE
 import org.education.ui.UIText.CONFIRM_SAVE_MESSAGE
 import org.education.ui.UIText.CONFIRM_SAVE_NOTE_TITLE
 import org.education.ui.UIText.EXIT_TITLE
+import org.jetbrains.compose.resources.painterResource
+import java.awt.Toolkit
 
 private val selectBackground = Color.White
 private val MAIN_WINDOW_COLOR = Color(244, 231, 207)
@@ -56,7 +66,11 @@ internal fun App(
     var genericError by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     var pendingSelectedNote by remember { mutableStateOf<NoteListItem?>(null) }
-    var pendingExitAfterSave by remember { mutableStateOf(false) }
+    var pendingNewNote by remember { mutableStateOf(false) }
+
+    val saveNoteIcon = painterResource(Res.drawable.save_note)
+    val newNoteIcon = painterResource(Res.drawable.new_note)
+    val exitIcon = painterResource(Res.drawable.exit)
 
     fun refreshNotes() {
         notes = noteService.loadAllNotes()
@@ -150,7 +164,7 @@ internal fun App(
                 if (!saved) return
             } else {
                 pendingSelectedNote = null
-                pendingExitAfterSave = false
+                pendingNewNote = true
                 showSaveConfirm = true
                 return
             }
@@ -185,7 +199,7 @@ internal fun App(
                 loadSelectedNote(note)
             } else {
                 pendingSelectedNote = note
-                pendingExitAfterSave = false
+                pendingNewNote = false
                 showSaveConfirm = true
             }
             return
@@ -195,19 +209,12 @@ internal fun App(
     }
 
     fun handleExit() {
-        if (isNoteChanged()) {
-            if (autosave) {
-                val saved = saveNote()
-                if (!saved) return
-                onExit()
-            } else {
-                pendingSelectedNote = null
-                pendingExitAfterSave = true
-                showExitConfirm = true
-            }
-        } else {
-            onExit()
-        }
+        showExitConfirm = true
+    }
+
+    fun isMenuShortcut(event: KeyEvent): Boolean {
+        val isMac = System.getProperty("os.name").startsWith("Mac", ignoreCase = true)
+        return if (isMac) event.isMetaPressed else event.isCtrlPressed
     }
 
     MaterialTheme(
@@ -216,7 +223,31 @@ internal fun App(
             onPrimary = Color.Black,
         )
     ) {
-        Surface(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when {
+                        isMenuShortcut(event) && event.key == Key.S -> {
+                            handleSave()
+                            true
+                        }
+
+                        isMenuShortcut(event) && event.key == Key.N -> {
+                            handleNewNote()
+                            true
+                        }
+
+                        event.key == Key.Escape -> {
+                            handleExit()
+                            true
+                        }
+
+                        else -> false
+                    }
+                }
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 TopAppBar(
                     title = { Text(UIText.MAIN_MENU_TITLE) },
@@ -225,6 +256,12 @@ internal fun App(
                             onClick = { handleNewNote() },
                             colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
                         ) {
+                            Icon(
+                                painter = newNoteIcon,
+                                contentDescription = null,
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(UIText.NEW_NOTE_TITLE)
                         }
 
@@ -234,6 +271,12 @@ internal fun App(
                             onClick = { handleSave() },
                             colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
                         ) {
+                            Icon(
+                                painter = saveNoteIcon,
+                                contentDescription = null,
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(UIText.SAVE_TITLE)
                         }
 
@@ -243,6 +286,12 @@ internal fun App(
                             onClick = { handleExit() },
                             colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
                         ) {
+                            Icon(
+                                painter = exitIcon,
+                                contentDescription = null,
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(EXIT_TITLE)
                         }
                     }
@@ -281,7 +330,13 @@ internal fun App(
                             .background(TEXT_AREA_COLOR),
                         header = header,
                         text = text,
-                        onHeaderChange = { header = it },
+                        onHeaderChange = { newValue ->
+                            if (newValue.length <= NOTE_TITLE_MAX_LENGTH) {
+                                header = newValue
+                            } else {
+                                Toolkit.getDefaultToolkit().beep()
+                            }
+                        },
                         onTextChange = { text = it }
                     )
                 }
@@ -312,15 +367,24 @@ internal fun App(
                         pendingSelectedNote = null
                     }
 
-                    if (pendingExitAfterSave) {
-                        pendingExitAfterSave = false
-                        onExit()
+                    if (pendingNewNote) {
+                        clearEditor()
+                        status = UIText.NOTE_CREATED_MESSAGE
+                        pendingNewNote = false
                     }
                 },
                 onDismiss = {
                     showSaveConfirm = false
-                    pendingSelectedNote = null
-                    pendingExitAfterSave = false
+                    pendingSelectedNote?.let {
+                        loadSelectedNote(it)
+                        pendingSelectedNote = null
+                    }
+
+                    if (pendingNewNote) {
+                        clearEditor()
+                        status = UIText.NOTE_CREATED_MESSAGE
+                        pendingNewNote = false
+                    }
                 }
             )
         }
@@ -367,11 +431,16 @@ internal fun App(
                 title = EXIT_TITLE,
                 onConfirm = {
                     showExitConfirm = false
+                    if (!autosave) {
+                        onExit()
+                        return@ConfirmDialog
+                    }
+                    val saved = saveNote()
+                    if (!saved) return@ConfirmDialog
                     onExit()
                 },
                 onDismiss = {
                     showExitConfirm = false
-                    pendingExitAfterSave = false
                 }
             )
         }
@@ -417,38 +486,44 @@ private fun LeftPanel(
     onSelectNote: (NoteListItem) -> Unit
 ) {
     Column(modifier = modifier) {
-        Button(
-            onClick = onSaveClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(BUTTONS_HEIGHT.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
-        ) {
-            Text(UIText.SAVE_BUTTON_TITLE)
+        AppTooltip(UIText.SAVE_BUTTON_TOOLTIP) {
+            Button(
+                onClick = onSaveClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(BUTTONS_HEIGHT.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
+            ) {
+                Text(UIText.SAVE_BUTTON_TITLE)
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = onLoadClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(BUTTONS_HEIGHT.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
-        ) {
-            Text(UIText.LOAD_BUTTON_TITLE)
+        AppTooltip(UIText.LOAD_BUTTON_TOOLTIP) {
+            Button(
+                onClick = onLoadClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(BUTTONS_HEIGHT.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
+            ) {
+                Text(UIText.LOAD_BUTTON_TITLE)
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = onRemoveClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(BUTTONS_HEIGHT.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
-        ) {
-            Text(UIText.REMOVE_BUTTON_TITLE)
+        AppTooltip(UIText.REMOVE_BUTTON_TOOLTIP) {
+            Button(
+                onClick = onRemoveClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(BUTTONS_HEIGHT.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = BUTTONS_COLOR)
+            ) {
+                Text(UIText.REMOVE_BUTTON_TITLE)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -547,4 +622,33 @@ private fun ConfirmDialog(
             }
         }
     )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun AppTooltip(
+    text: String,
+    content: @Composable () -> Unit
+) {
+    TooltipArea(
+        tooltip = {
+            Surface(
+                modifier = Modifier.shadow(4.dp),
+                color = Color(255, 255, 210),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        },
+        delayMillis = 500,
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            alignment = Alignment.BottomEnd,
+            offset = DpOffset(0.dp, 0.dp)
+        )
+    ) {
+        content()
+    }
 }
